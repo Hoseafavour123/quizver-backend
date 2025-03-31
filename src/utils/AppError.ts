@@ -1,4 +1,4 @@
-import AppErrorCodes from "../constants/appErrorCodes"
+import AppErrorCodes from "../constants/appErrorCode"
 import { httpStatusCodes } from "../constants/http"
 
 class AppError extends Error {

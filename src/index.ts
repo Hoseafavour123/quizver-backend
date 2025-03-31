@@ -11,7 +11,7 @@ import paymentRoute from './routes/payment.route'
 import sessionRoutes from './routes/session.route'
 import connectDB from './config/db'
 import cookieParser from 'cookie-parser'
-import { authenticate } from './middleware/authenticate'
+import authenticate from './middleware/authenticate'
 import morgan from 'morgan'
 import cloudinary from 'cloudinary'
 import { createServer } from 'http';
