@@ -9,7 +9,6 @@ import VerificationCodeTypes from '../constants/verificationcodetypes'
 import SessionModel from '../models/session.model'
 import UserModel from '../models/user.model'
 import VerificationCodeModel from '../models/verificationCode.model'
-import jwt from 'jsonwebtoken'
 import appAssert from '../utils/appAssert'
 import {
   RefreshTokenPayload,
@@ -86,7 +85,7 @@ export const createAccount = async (data: CreateAccountParams) => {
     userId,
     sessionId: session._id,
   })
-  
+
   return {
     user: user.omitPassword(),
     accessToken,
