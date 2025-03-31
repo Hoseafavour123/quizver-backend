@@ -9,10 +9,6 @@ export const authenticate = (
   res: Response,
   next: NextFunction
 ) => {
-  // Allow Paystack to call `/payments/verify` without authentication
-  if (req.path === '/payment/verify') {
-    return next()
-  }
 
   const accessToken = req.cookies.accessToken
   appAssert(

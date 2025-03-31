@@ -27,7 +27,8 @@ const port = process.env.PORT || 4005
 
 app.use(
   cors({
-    origin: process.env.APP_ORIGIN as string,
+    origin:'https://quizver.vercel.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   })
 )
