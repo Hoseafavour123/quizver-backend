@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authAdmin_controller_1 = require("../controller/authAdmin.controller");
+const authAdminRoutes = (0, express_1.Router)();
+authAdminRoutes.post('/register', authAdmin_controller_1.registerHandler);
+authAdminRoutes.post('/login', authAdmin_controller_1.loginHandler);
+authAdminRoutes.get('/logout', authAdmin_controller_1.logoutHandler);
+authAdminRoutes.get('/refresh', authAdmin_controller_1.refreshHandler);
+authAdminRoutes.get('/email/verify/:code', authAdmin_controller_1.verifyEmailHandler);
+authAdminRoutes.post('/password/forgot', authAdmin_controller_1.sendPasswordResetHandler);
+authAdminRoutes.post('/password/reset', authAdmin_controller_1.resetPasswordHandler);
+exports.default = authAdminRoutes;

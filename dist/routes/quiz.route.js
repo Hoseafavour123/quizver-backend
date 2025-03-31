@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const quiz_controller_1 = require("../controller/quiz.controller");
+const uploadMiddleware_1 = require("../middleware/uploadMiddleware");
+const router = (0, express_1.Router)();
+router.get('/get-live-quiz', quiz_controller_1.getLiveQuiz);
+router.get('/completed-quizzes', quiz_controller_1.getCompletedQuizzes);
+router.get('/leaderboard', quiz_controller_1.getLeaderboardData);
+router.post('/submit', quiz_controller_1.submitQuiz);
+router.post("/", uploadMiddleware_1.uploadMiddleware, quiz_controller_1.createQuiz);
+router.delete("/:id", quiz_controller_1.deleteQuiz);
+router.get('/', quiz_controller_1.getAllQuizzes);
+router.get('/:id', quiz_controller_1.getQuiz);
+router.put('/:id', uploadMiddleware_1.uploadMiddleware, quiz_controller_1.updateQuiz);
+router.put('/go-live/:id', quiz_controller_1.goLive);
+exports.default = router;
