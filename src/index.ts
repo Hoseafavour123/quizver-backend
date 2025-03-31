@@ -33,6 +33,11 @@ app.use(
   })
 )
 
+app.use(express.json())
+app.use(cookieParser())
+app.use(bodyParser.json())
+app.use(express.urlencoded({ extended: true }))
+
 const httpServer = createServer(app);
 export const io = initSocket(httpServer); // ✅ Initialize Socket.io
 
@@ -43,10 +48,7 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-app.use(express.json())
-app.use(cookieParser())
-app.use(bodyParser.json())
-app.use(express.urlencoded({ extended: true }))
+
 
 app.use(morgan('dev'))
 
