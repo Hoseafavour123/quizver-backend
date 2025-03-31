@@ -22,7 +22,7 @@ import bodyParser from 'body-parser'
 dotenv.config()
 
 const app = express()
-const port = 4004
+const port = process.env.PORT || 4005
 
 
 app.use(
