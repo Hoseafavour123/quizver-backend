@@ -11,9 +11,10 @@ import AdminModel from '../models/admin.model'
 import VerificationCodeModel from '../models/verificationCode.model'
 import jwt from 'jsonwebtoken'
 import appAssert from '../utils/appAssert'
-import { RefreshTokenPayload, verifyToken } from '../utils/jwt'
+import { RefreshTokenPayload, refreshTokenSignOptions, signToken, verifyToken } from '../utils/jwt'
 import {
   fiveMinutesAgo,
+  ONE_DAY_MS,
   oneHourFromNow,
   thirtyDaysFromNow,
 } from '../utils/date'
@@ -67,23 +68,18 @@ export const createAccount = async (data: CreateAccountParams) => {
     userAgent: data.userAgent,
   })
 
-  const refreshToken = jwt.sign(
-    { sessionId: session._id },
-    process.env.JWT_TOKEN_SECRET as string,
+  const refreshToken = signToken(
     {
-      audience: 'user',
-      expiresIn: '30d',
-    }
+      sessionId: session._id,
+    },
+    refreshTokenSignOptions
   )
-
-  const accessToken = jwt.sign(
-    { sessionId: session._id, userId },
-    process.env.JWT_TOKEN_SECRET as string,
-    { audience: 'user', expiresIn: '30min' }
-  )
-
+  const accessToken = signToken({
+    userId,
+    sessionId: session._id,
+  })
   return {
-    admin: admin.omitPassword(),
+    user: admin.omitPassword(),
     accessToken,
     refreshToken,
   }
@@ -117,63 +113,59 @@ export const loginUser = async ({
     sessionId: session._id,
   }
 
-  const refreshToken = jwt.sign(
-    { ...sessionInfo },
-    process.env.JWT_TOKEN_SECRET as string,
-    {
-      audience: 'user',
-      expiresIn: '30d',
-    }
-  )
-
-  const accessToken = jwt.sign(
-    { ...sessionInfo, userId },
-    process.env.JWT_TOKEN_SECRET as string,
-    { audience: 'user', expiresIn: '30min' }
-  )
-
+  const refreshToken = signToken(sessionInfo, refreshTokenSignOptions)
+  const accessToken = signToken({
+    ...sessionInfo,
+    userId,
+  })
   return {
-    admin: admin.omitPassword(),
+    user: admin.omitPassword(),
     accessToken,
     refreshToken,
   }
+
+ 
 }
 
 export const refreshUserAccessToken = async (refreshToken: string) => {
   const { payload } = verifyToken<RefreshTokenPayload>(refreshToken, {
-    secret: process.env.JWT_TOKEN_SECRET as string,
+    secret: refreshTokenSignOptions.secret,
   })
-
   appAssert(payload, UNAUTHORIZED, 'Invalid refresh token')
 
   const session = await SessionModel.findById(payload.sessionId)
+  const now = Date.now()
   appAssert(
-    session && session.expiresAt.getTime() > Date.now(),
+    session && session.expiresAt.getTime() > now,
     UNAUTHORIZED,
-    'Session Expired'
+    'Session expired'
   )
 
-  const sessionNeedsRefresh =
-    session.expiresAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
-  let newRefreshToken
-
+  // refresh the session if it expires in the next 24hrs
+  const sessionNeedsRefresh = session.expiresAt.getTime() - now <= ONE_DAY_MS
   if (sessionNeedsRefresh) {
     session.expiresAt = thirtyDaysFromNow()
     await session.save()
-    newRefreshToken = jwt.sign(
-      { sessionId: session._id },
-      process.env.JWT_TOKEN_SECRET as string,
-      { expiresIn: '30d' }
-    )
   }
 
-  const accessToken = jwt.sign(
-    { sessionId: session._id, userId: session.userId },
-    process.env.JWT_TOKEN_SECRET as string,
-    { expiresIn: '30min' }
-  )
+  const newRefreshToken = sessionNeedsRefresh
+    ? signToken(
+        {
+          sessionId: session._id,
+        },
+        refreshTokenSignOptions
+      )
+    : undefined
 
-  return { accessToken, newRefreshToken: newRefreshToken || refreshToken }
+  const accessToken = signToken({
+    userId: session.userId,
+    sessionId: session._id,
+  })
+
+  return {
+    accessToken,
+    newRefreshToken,
+  }
 }
 
 export const verifyEmail = async (code: string) => {

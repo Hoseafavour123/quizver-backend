@@ -20,6 +20,9 @@ import SessionModel from '../models/session.model'
 import { verifyToken } from '../utils/jwt'
 import appAssert from '../utils/appAssert'
 
+
+
+
 export const registerHandler = catchErrors(async (req, res) => {
   const request = registerSchema.parse({
     ...req.body,
@@ -33,6 +36,8 @@ export const registerHandler = catchErrors(async (req, res) => {
     .json(user)
 })
 
+
+
 export const loginHandler = catchErrors(async (req, res) => {
   const request = loginSchema.parse({
     ...req.body,
@@ -45,6 +50,9 @@ export const loginHandler = catchErrors(async (req, res) => {
     .status(OK)
     .json({ message: 'login successfull' })
 })
+
+
+
 
 export const logoutHandler = catchErrors(async (req, res) => {
   const accessToken = req.cookies.accessToken
