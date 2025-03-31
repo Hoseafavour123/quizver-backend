@@ -17,7 +17,7 @@ const sendMail = async (options) => {
         tls: { rejectUnauthorized: false },
     });
     const mailOptions = {
-        from: `"Quizly" <hoseafavour123@gmail.com>`,
+        from: `"Quizver" <hoseafavour123@gmail.com>`,
         to: options.email,
         subject: options.subject,
         html: options.html,

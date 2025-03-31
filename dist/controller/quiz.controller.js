@@ -202,7 +202,6 @@ exports.deleteQuiz = (0, catchErrors_1.default)(async (req, res) => {
     return res.status(200).json({ message: 'Quiz deleted successfully!' });
 });
 exports.submitQuiz = (0, catchErrors_1.default)(async (req, res) => {
-    console.log('Inside submit api: ', req.body);
     const { quizId, answers, score, totalQuestions } = req.body;
     // Validate required fields
     if (!quizId || !answers || score === undefined || !totalQuestions) {

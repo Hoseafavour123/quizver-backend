@@ -12,10 +12,10 @@ class PaymentService {
             const form = {
                 amount: data.amount * 100, // Convert to kobo (smallest unit for Paystack)
                 email: data.email,
-                metadata: { full_name: data.full_name },
-                callback_url: 'http://localhost:4004/payment/verify'
+                metadata: { full_name: data.full_name, quizId: data.quizId, userId: data.userId },
+                callback_url: 'http://localhost:5173/payment/verify'
             };
-            form.metadata = { full_name: form.metadata?.full_name || '' };
+            form.metadata = { full_name: data.full_name, quizId: form.metadata?.quizId, userId: form.metadata?.userId };
             form.amount *= 100; // Convert to kobo (smallest unit for Paystack)
             const response = await (0, payment_1.initializePayment)(form);
             return response;
@@ -34,12 +34,14 @@ class PaymentService {
             }
             const { reference: paymentReference, amount, status } = response.data;
             const { email } = response.data.customer;
-            const full_name = response.data.metadata.full_name;
+            const { userId, quizId, full_name } = response.data.metadata;
             const newPayment = new payment_model_1.default({
                 reference: paymentReference,
-                amount,
-                email,
                 full_name,
+                amount: amount / 100,
+                email,
+                quizId,
+                userId,
                 status,
             });
             await newPayment.save();

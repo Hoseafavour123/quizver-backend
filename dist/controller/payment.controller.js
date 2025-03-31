@@ -3,17 +3,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notifyUsersForPayment = exports.getPayment = exports.createPayment = exports.startPayment = void 0;
+exports.isQuizPaidFor = exports.notifyUsersForPayment = exports.getPayment = exports.createPayment = exports.startPayment = void 0;
 const payment_service_1 = __importDefault(require("../services/payment.service"));
 const catchErrors_1 = __importDefault(require("../utils/catchErrors"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const quiz_model_1 = __importDefault(require("../models/quiz.model"));
 const sendMail_1 = require("../utils/sendMail");
+const payment_model_1 = __importDefault(require("../models/payment.model"));
 // Initialize PaymentService instance
 const paymentInstance = new payment_service_1.default();
 const startPayment = async (req, res) => {
+    console.log(req.body, req.params.quizId, req.userId);
     try {
-        const response = await paymentInstance.startPayment(req.body);
+        const response = await paymentInstance.startPayment({ ...req.body, userId: req.userId, quizId: req.params.quizId });
         res.status(201).json({ status: 'Success', data: response });
     }
     catch (error) {
@@ -45,7 +47,7 @@ exports.notifyUsersForPayment = (0, catchErrors_1.default)(async (req, res) => {
     const quizId = req.params.quizId;
     const users = await user_model_1.default.find({});
     const quiz = await quiz_model_1.default.findOne({ _id: quizId });
-    const quizPaymentUrl = `http://localhost:5173/quiz/payment/${quizId}`;
+    const quizPaymentUrl = `http://localhost:5173/quiz/pay/${quizId}`;
     users.forEach((user) => {
         (0, sendMail_1.sendMail)({
             email: user.email,
@@ -55,4 +57,13 @@ exports.notifyUsersForPayment = (0, catchErrors_1.default)(async (req, res) => {
     });
     await quiz_model_1.default.findOneAndUpdate({ id: quizId }, { notificationSent: true });
     return res.json({ message: 'Successfully notified users ' });
+});
+exports.isQuizPaidFor = (0, catchErrors_1.default)(async (req, res) => {
+    const quizId = req.params.quizId;
+    const userId = req.userId;
+    const payment = await payment_model_1.default.findOne({ quizId, userId });
+    if (!payment) {
+        return res.json({ isQuizPaidFor: false, message: 'Payment not found' });
+    }
+    return res.json({ isQuizPaidFor: true, message: 'Payment verified successfully' });
 });

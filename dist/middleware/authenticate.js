@@ -8,6 +8,10 @@ const http_1 = require("../constants/http");
 const appAssert_1 = __importDefault(require("../utils/appAssert"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const authenticate = (req, res, next) => {
+    // Allow Paystack to call `/payments/verify` without authentication
+    if (req.path === '/payment/verify') {
+        return next();
+    }
     const accessToken = req.cookies.accessToken;
     (0, appAssert_1.default)(accessToken, http_1.UNAUTHORIZED, 'Unauthorized', "InvalidAccessToken" /* AppErrorCodes.InvalidAccessToken */);
     try {

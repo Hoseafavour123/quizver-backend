@@ -41,6 +41,16 @@ const PaymentSchema = new mongoose_1.Schema({
         required: true,
         trim: true,
     },
+    quizId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'Quiz',
+        required: true,
+    },
+    userId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     email: {
         type: String,
         required: true,
