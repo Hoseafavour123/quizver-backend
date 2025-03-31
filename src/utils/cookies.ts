@@ -4,7 +4,7 @@ import { fifteenMinutesFromNow, thirtyDaysFromNow } from './date'
 export const REFRESH_PATH = '/auth/refresh'
 
 const defaults: CookieOptions = {
-  sameSite: 'strict',
+  sameSite: 'none',
   httpOnly: true,
   secure: true,
 }
