@@ -55,8 +55,8 @@ export const notifyUsersForPayment = catchErrors(async (req, res) => {
   const users = await UserModel.find({})
   const quiz = await QuizModel.findOne({ _id: quizId })
 
-  //const quizPaymentUrl = `https://quizver.vercel.app/quiz/pay/${quizId}`
-  const quizPaymentUrl = `http://localhost:5173/quiz/pay/${quizId}`
+  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+  //const quizPaymentUrl = `http://localhost:5173/quiz/pay/${quizId}`
 
   // Use Promise.all to handle asynchronous email sending
   await Promise.all(
