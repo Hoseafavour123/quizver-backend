@@ -40,17 +40,17 @@ export const getCompletedQuizzes = catchErrors(async (req, res) => {
   const limit = 10
   const skip = (page - 1) * limit
 
+  // Fetch completed quizzes for the user with pagination and sort by latest
   const quizzes = await CompletedQuiz.find({ userId: req.userId })
     .populate('quizId')
+    .sort({ createdAt: -1 }) // Sort by latest quizzes first
     .skip(skip)
     .limit(limit)
 
-  appAssert(quizzes, 404, 'No quizzes found')
+  appAssert(quizzes.length > 0, 404, 'No quizzes found')
 
-  const totalQuizzes = await Quiz.countDocuments({ userId: req.userId })
-  const hasMore = totalQuizzes > skip + quizzes.length
-
-  return res.json({ quizzes, hasMore })
+  // Return paginated quizzes
+  return res.json({ quizzes, currentPage: page })
 })
 
 // Create a Quiz
