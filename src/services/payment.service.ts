@@ -39,6 +39,7 @@ class PaymentService {
           quizId: data.quizId,
           userId: data.userId,
         },
+        //callback_url: 'http://localhost:5173/payment/verify',
         callback_url: 'https://quizver.vercel.app/payment/verify',
       }
       form.metadata = {full_name: data.full_name, quizId: form.metadata?.quizId, userId: form.metadata?.userId }

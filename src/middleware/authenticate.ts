@@ -9,7 +9,7 @@ import mongoose from 'mongoose'
 const authenticate: RequestHandler = (req, res, next) => {
  
   const accessToken = req.cookies.accessToken as string | undefined
- console.log('Access TOKEN: ', accessToken)
+ 
   appAssert(
     accessToken,
     UNAUTHORIZED,
