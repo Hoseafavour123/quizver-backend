@@ -43,7 +43,7 @@ class PaymentService {
         callback_url:
           process.env.ENVIRONMENT == 'production'
             ? 'https://quizver.vercel.app/user/payment/verify'
-            : 'http://localhost:5173/payment/verify',
+            : 'http://localhost:5173/user/payment/verify',
       }
       form.metadata = {full_name: data.full_name, quizId: form.metadata?.quizId, userId: form.metadata?.userId }
       form.amount *= 100 // Convert to kobo (smallest unit for Paystack)

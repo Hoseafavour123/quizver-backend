@@ -8,7 +8,6 @@ const http_1 = require("../constants/http");
 const session_model_1 = __importDefault(require("../models/session.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const verificationCode_model_1 = __importDefault(require("../models/verificationCode.model"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const appAssert_1 = __importDefault(require("../utils/appAssert"));
 const jwt_1 = require("../utils/jwt");
 const date_1 = require("../utils/date");
@@ -38,12 +37,18 @@ const createAccount = async (data) => {
         userId,
         userAgent: data.userAgent,
     });
-    const refreshToken = jsonwebtoken_1.default.sign({ sessionId: session._id }, process.env.JWT_TOKEN_SECRET, {
-        audience: 'user',
-        expiresIn: '30d',
+    const refreshToken = (0, jwt_1.signToken)({
+        sessionId: session._id,
+    }, jwt_1.refreshTokenSignOptions);
+    const accessToken = (0, jwt_1.signToken)({
+        userId,
+        sessionId: session._id,
     });
-    const accessToken = jsonwebtoken_1.default.sign({ sessionId: session._id }, process.env.JWT_TOKEN_SECRET, { audience: 'user', expiresIn: '30min' });
-    return { user: user.omitPassword(), accessToken, refreshToken };
+    return {
+        user: user.omitPassword(),
+        accessToken,
+        refreshToken,
+    };
 };
 exports.createAccount = createAccount;
 const loginUser = async ({ email, password, userAgent, }) => {
@@ -59,30 +64,45 @@ const loginUser = async ({ email, password, userAgent, }) => {
     const sessionInfo = {
         sessionId: session._id,
     };
-    const refreshToken = jsonwebtoken_1.default.sign({ ...sessionInfo }, process.env.JWT_TOKEN_SECRET, {
-        audience: 'user',
-        expiresIn: '30d',
+    const refreshToken = (0, jwt_1.signToken)(sessionInfo, jwt_1.refreshTokenSignOptions);
+    const accessToken = (0, jwt_1.signToken)({
+        ...sessionInfo,
+        userId,
     });
-    const accessToken = jsonwebtoken_1.default.sign({ ...sessionInfo, userId }, process.env.JWT_TOKEN_SECRET, { audience: 'user', expiresIn: '30min' });
-    return { user: user.omitPassword(), accessToken, refreshToken };
+    return {
+        user: user.omitPassword(),
+        accessToken,
+        refreshToken,
+    };
 };
 exports.loginUser = loginUser;
 const refreshUserAccessToken = async (refreshToken) => {
     const { payload } = (0, jwt_1.verifyToken)(refreshToken, {
-        secret: process.env.JWT_TOKEN_SECRET,
+        secret: jwt_1.refreshTokenSignOptions.secret,
     });
     (0, appAssert_1.default)(payload, http_1.UNAUTHORIZED, 'Invalid refresh token');
     const session = await session_model_1.default.findById(payload.sessionId);
-    (0, appAssert_1.default)(session && session.expiresAt.getTime() > Date.now(), http_1.UNAUTHORIZED, 'Session Expired');
-    const sessionNeedsRefresh = session.expiresAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000;
-    let newRefreshToken;
+    const now = Date.now();
+    (0, appAssert_1.default)(session && session.expiresAt.getTime() > now, http_1.UNAUTHORIZED, 'Session expired');
+    // refresh the session if it expires in the next 24hrs
+    const sessionNeedsRefresh = session.expiresAt.getTime() - now <= date_1.ONE_DAY_MS;
     if (sessionNeedsRefresh) {
         session.expiresAt = (0, date_1.thirtyDaysFromNow)();
         await session.save();
-        newRefreshToken = jsonwebtoken_1.default.sign({ sessionId: session._id }, process.env.JWT_TOKEN_SECRET, { expiresIn: '30d' });
     }
-    const accessToken = jsonwebtoken_1.default.sign({ sessionId: session._id, userId: session.userId }, process.env.JWT_TOKEN_SECRET, { expiresIn: '30min' });
-    return { accessToken, newRefreshToken: newRefreshToken || refreshToken };
+    const newRefreshToken = sessionNeedsRefresh
+        ? (0, jwt_1.signToken)({
+            sessionId: session._id,
+        }, jwt_1.refreshTokenSignOptions)
+        : undefined;
+    const accessToken = (0, jwt_1.signToken)({
+        userId: session.userId,
+        sessionId: session._id,
+    });
+    return {
+        accessToken,
+        newRefreshToken,
+    };
 };
 exports.refreshUserAccessToken = refreshUserAccessToken;
 const verifyEmail = async (code) => {

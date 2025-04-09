@@ -299,7 +299,7 @@ export const goLive = catchErrors(async (req, res) => {
 })
 
 export const getLiveQuiz = catchErrors(async (req, res) => {
-  const liveQuiz = await Quiz.findOne({ status: 'live' })
+  const liveQuiz = await Quiz.findOne({ status: 'scheduled' })
 
   if (!liveQuiz) return res.status(400).json({ message: 'No live quiz' })
   return res.json(liveQuiz)
@@ -422,7 +422,7 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
         })
       )
     )
-    
+
     const io = getSocket()
 
     io.emit('quiz-live', { quizId })

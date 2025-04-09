@@ -8,6 +8,7 @@ router.get('/get-live-quiz', quiz_controller_1.getLiveQuiz);
 router.get('/completed-quizzes', quiz_controller_1.getCompletedQuizzes);
 router.get('/leaderboard', quiz_controller_1.getLeaderboardData);
 router.post('/submit', quiz_controller_1.submitQuiz);
+router.post('/schedule/:quizId', quiz_controller_1.scheduleQuiz);
 router.post("/", uploadMiddleware_1.uploadMiddleware, quiz_controller_1.createQuiz);
 router.delete("/:id", quiz_controller_1.deleteQuiz);
 router.get('/', quiz_controller_1.getAllQuizzes);

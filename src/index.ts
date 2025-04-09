@@ -49,9 +49,7 @@ cloudinary.v2.config({
 })
 
 
-
 app.use(morgan('dev'))
-
 
 app.use('/auth', authUserRoutes)
 app.use('/auth/admin', authAdminRoutes)

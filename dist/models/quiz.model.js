@@ -10,12 +10,16 @@ const quizSchema = new mongoose_1.default.Schema({
     duration: Number,
     status: {
         type: String,
-        enum: ['draft', 'live', 'closed'],
+        enum: ['draft', 'live', 'closed', 'scheduled'],
         default: 'draft',
     },
     startTime: { type: Date, default: null },
     category: String,
     notificationSent: { type: Boolean, default: false },
+    scheduledAt: {
+        type: Date,
+        default: null,
+    },
     questions: [
         {
             image: String,
