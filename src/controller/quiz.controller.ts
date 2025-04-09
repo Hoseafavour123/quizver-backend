@@ -370,36 +370,30 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   const quiz = await Quiz.findById(quizId)
   appAssert(quiz, 404, 'Quiz not found')
 
-
   quiz.status = 'scheduled'
   quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000)
   await quiz.save()
 
+  const users = await UserModel.find({})
 
-   const users = await UserModel.find({})
-   
-   const quizPaymentUrl =
-     process.env.ENVIRONMENT == 'production'
-       ? `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-       : `http://localhost:5173/user/quiz/pay/${quizId}`
+  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+  //const quizPaymentUrl =  `http://localhost:5173/user/quiz/pay/${quizId}`
 
-   // Use Promise.all to handle asynchronous email sending
-   await Promise.all(
-     users.map((user) =>
-       sendMail({
-         email: user.email,
-         ...getNewQuizNotificationTemplate(
-           quiz?.title || 'New Quiz',
-           quizPaymentUrl,
-           hours
-         ),
-       })
-     )
-   )
+  // Use Promise.all to handle asynchronous email sending
+  await Promise.all(
+    users.map((user) =>
+      sendMail({
+        email: user.email,
+        ...getNewQuizNotificationTemplate(
+          quiz?.title || 'New Quiz',
+          quizPaymentUrl,
+          hours
+        ),
+      })
+    )
+  )
 
-  
-   await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
-
+  await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
 
   setTimeout(async () => {
     const updatedQuiz = await Quiz.findById(quizId)
@@ -410,15 +404,16 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
     // Notify users about the quiz going live
     // Use Promise.all to handle asynchronous email sending
+
+    //const quizUrl = "http://localhost:5173/user/live-quiz"
+
+    const quizUrl = ' https://quizver.vercel.app/user/live-quiz'
+
     await Promise.all(
       users.map((user) =>
         sendMail({
           email: user.email,
-        ...getQuizNowLiveTemplate(
-          quiz?.title || 'Live Quiz',
-          `${process.env.ENVIRONMENT == 'development' ? 'http://localhost:5173/user/live-quiz' : 'https://quizver.vercel.app/user/live-quiz'} `,
-
-        )
+          ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
         })
       )
     )
