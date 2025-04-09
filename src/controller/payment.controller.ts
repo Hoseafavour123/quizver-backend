@@ -16,7 +16,11 @@ export const startPayment = async (
 ): Promise<void> => {
   console.log(req.body, req.params.quizId, req.userId)
   try {
-    const response = await paymentInstance.startPayment({...req.body, userId: req.userId, quizId: req.params.quizId})
+    const response = await paymentInstance.startPayment({
+      ...req.body,
+      userId: req.userId,
+      quizId: req.params.quizId,
+    })
     res.status(201).json({ status: 'Success', data: response })
   } catch (error: any) {
     res.status(500).json({ status: 'Failed', message: error.message })
@@ -55,8 +59,10 @@ export const notifyUsersForPayment = catchErrors(async (req, res) => {
   const users = await UserModel.find({})
   const quiz = await QuizModel.findOne({ _id: quizId })
 
-  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-  //const quizPaymentUrl = `http://localhost:5173/quiz/pay/${quizId}`
+  const quizPaymentUrl =
+    process.env.ENVIRONMENT == 'production'
+      ? `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+      : `http://localhost:5173/quiz/pay/${quizId}`
 
   // Use Promise.all to handle asynchronous email sending
   await Promise.all(
@@ -65,7 +71,8 @@ export const notifyUsersForPayment = catchErrors(async (req, res) => {
         email: user.email,
         ...getNewQuizNotificationTemplate(
           quiz?.title || 'New Quiz',
-          quizPaymentUrl
+          quizPaymentUrl,
+          1
         ),
       })
     )
@@ -76,7 +83,6 @@ export const notifyUsersForPayment = catchErrors(async (req, res) => {
   return res.json({ message: 'Successfully notified users ' })
 })
 
-
 export const isQuizPaidFor = catchErrors(async (req, res) => {
   const quizId = req.params.quizId
   const userId = req.userId
@@ -85,5 +91,8 @@ export const isQuizPaidFor = catchErrors(async (req, res) => {
   if (!payment) {
     return res.json({ isQuizPaidFor: false, message: 'Payment not found' })
   }
-  return res.json({isQuizPaidFor: true, message: 'Payment verified successfully'})
+  return res.json({
+    isQuizPaidFor: true,
+    message: 'Payment verified successfully',
+  })
 })

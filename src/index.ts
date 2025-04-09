@@ -52,7 +52,6 @@ cloudinary.v2.config({
 
 app.use(morgan('dev'))
 
-// app.use('*', express.static(path.join(__dirname, '../../frontend/dist')))
 
 app.use('/auth', authUserRoutes)
 app.use('/auth/admin', authAdminRoutes)
@@ -66,9 +65,6 @@ app.use('/quiz', authenticate, QuizRoutes)
 app.use('/payment', authenticate, paymentRoute)
 
 app.use(errorHandler)
-// app.use('*', (req: Request, res: Response) => {
-//   res.sendFile(path.join(__dirname + '/../../frontend/dist/index.html'))
-// })
 
 
 httpServer.listen(port, async () => {

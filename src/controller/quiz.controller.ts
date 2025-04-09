@@ -7,6 +7,9 @@ import { getSocket } from '../sockets/socket'
 import CompletedQuiz from '../models/completedQuiz'
 import UserModel from '../models/user.model'
 import mongoose from 'mongoose'
+import { sendMail } from '../utils/sendMail'
+import QuizModel from '../models/quiz.model'
+import { getNewQuizNotificationTemplate, getQuizNowLiveTemplate } from '../utils/emailTemplates'
 
 // Get single quiz
 export const getQuiz = catchErrors(async (req, res) => {
@@ -55,7 +58,6 @@ export const getCompletedQuizzes = catchErrors(async (req, res) => {
 
 // Create a Quiz
 export const createQuiz = catchErrors(async (req, res) => {
-  console.log(req.body)
   const parsedData = quizSchema.safeParse(req.body)
   if (!parsedData.success) {
     console.log(parsedData.error.errors)
@@ -241,7 +243,6 @@ export const deleteQuiz = catchErrors(async (req, res) => {
 })
 
 export const submitQuiz = catchErrors(async (req, res) => {
- 
   const { quizId, answers, score, totalQuestions } = req.body
 
   // Validate required fields
@@ -304,7 +305,6 @@ export const getLiveQuiz = catchErrors(async (req, res) => {
   return res.json(liveQuiz)
 })
 
-
 export const getLeaderboardData = catchErrors(async (req, res) => {
   const filter = req.query.filter || 'all' // Default to all-time
   const now = new Date()
@@ -356,4 +356,89 @@ export const getLeaderboardData = catchErrors(async (req, res) => {
   })
 
   res.json(leaderboardData)
+})
+
+
+
+export const scheduleQuiz = catchErrors(async (req, res) => {
+  const { quizId } = req.params
+  const { hours } = req.body
+
+  appAssert(quizId, 400, 'Quiz ID is required')
+  appAssert(hours, 400, 'Hours until start is required')
+
+  const quiz = await Quiz.findById(quizId)
+  appAssert(quiz, 404, 'Quiz not found')
+
+
+  quiz.status = 'scheduled'
+  quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000)
+  await quiz.save()
+
+
+   const users = await UserModel.find({})
+   
+   const quizPaymentUrl =
+     process.env.ENVIRONMENT == 'production'
+       ? `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+       : `http://localhost:5173/user/quiz/pay/${quizId}`
+
+   // Use Promise.all to handle asynchronous email sending
+   await Promise.all(
+     users.map((user) =>
+       sendMail({
+         email: user.email,
+         ...getNewQuizNotificationTemplate(
+           quiz?.title || 'New Quiz',
+           quizPaymentUrl,
+           hours
+         ),
+       })
+     )
+   )
+
+  
+   await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
+
+
+  setTimeout(async () => {
+    const updatedQuiz = await Quiz.findById(quizId)
+    appAssert(updatedQuiz, 404, 'Quiz not found')
+
+    updatedQuiz.status = 'live'
+    await updatedQuiz.save()
+
+    // Notify users about the quiz going live
+    // Use Promise.all to handle asynchronous email sending
+    await Promise.all(
+      users.map((user) =>
+        sendMail({
+          email: user.email,
+        ...getQuizNowLiveTemplate(
+          quiz?.title || 'Live Quiz',
+          `${process.env.ENVIRONMENT == 'development' ? 'http://localhost:5173/user/live-quiz' : 'https://quizver.vercel.app/user/live-quiz'} `,
+
+        )
+        })
+      )
+    )
+    
+    const io = getSocket()
+
+    io.emit('quiz-live', { quizId })
+    console.log(`Quiz ${quizId} is now live.`)
+
+    setTimeout(async () => {
+      const liveQuiz = await Quiz.findById(quizId)
+      appAssert(liveQuiz, 404, 'Quiz not found')
+
+      liveQuiz.status = 'closed'
+      await liveQuiz.save()
+
+      io.emit('quiz-ended', { quizId })
+      console.log(`Quiz ${quizId} has ended.`)
+    }, updatedQuiz.duration * 60 * 1000)
+  }, hours * 60 * 60 * 1000) // hours to ms
+
+  return res.status(200).json({ message: 'Quiz scheduled successfully', quiz })
 })

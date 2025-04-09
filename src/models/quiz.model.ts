@@ -4,10 +4,11 @@ export interface QuizDocument extends mongoose.Document {
   title: string
   description: string
   duration: number
-  status: 'draft' | 'live' | 'closed'
+  status: 'draft' | 'live' | 'closed' | 'scheduled'
   startTime: Date
   category: string
   notificationSent: boolean
+  scheduledAt : Date
   questions: [
     {
       image: string
@@ -25,12 +26,16 @@ const quizSchema = new mongoose.Schema<QuizDocument>(
     duration: Number,
     status: {
       type: String,
-      enum: ['draft', 'live', 'closed'],
+      enum: ['draft', 'live', 'closed', 'scheduled'],
       default: 'draft',
     },
     startTime: { type: Date, default: null },
     category: String,
-    notificationSent: {type: Boolean, default: false},
+    notificationSent: { type: Boolean, default: false },
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
     questions: [
       {
         image: String,

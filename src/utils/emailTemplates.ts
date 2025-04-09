@@ -12,7 +12,7 @@ export const getVerifyEmailTemplate = (url: string) => ({
 
 
 
-export const getNewQuizNotificationTemplate = (quizTitle: string, registerUrl: string) => ({
+export const getNewQuizNotificationTemplate = (quizTitle: string, registerUrl: string, hours: number) => ({
   subject: `🚀 New Quiz Alert: ${quizTitle}!`,
   text: `A new quiz "${quizTitle}" is now available! Click the link below to register and participate:\n${registerUrl}`,
   html: `<!DOCTYPE html>
@@ -35,14 +35,54 @@ export const getNewQuizNotificationTemplate = (quizTitle: string, registerUrl: s
   </head>
   <body>
     <div class="container">
-      <div class="header">🎉 A New Quiz is Live!</div>
+      <div class="header">🎉 New Quiz Alert!</div>
       <div class="content">
         <h2>${quizTitle}</h2>
+        <strong>Will go live in ${hours} hour(s)! </strong>
         <p>Think you have what it takes? Test your knowledge with our latest quiz! Click the button below to register.</p>
         <a href="${registerUrl}" class="button">Register Now</a>
       </div>
-      <div class="footer">© ${new Date().getFullYear()} QuizMaster | All rights reserved</div>
+      <div class="footer">© ${new Date().getFullYear()} Quizver | All rights reserved</div>
     </div>
   </body>
   </html>`,
 });
+
+
+export const getQuizNowLiveTemplate = (
+  quizTitle: string,
+  startUrl: string
+) => ({
+  subject: `🟢 Quiz Now Live: ${quizTitle}`,
+  text: `The quiz "${quizTitle}" is now live! Click below to start immediately:\n${startUrl}`,
+  html: `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Now Live</title>
+    <style>
+      body { font-family: 'Arial', sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; }
+      .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+      .header { background: #28a745; color: #ffffff; text-align: center; padding: 20px 10px; font-size: 22px; font-weight: bold; }
+      .content { padding: 30px; text-align: center; color: #333333; }
+      .content h2 { color: #28a745; font-size: 24px; margin-bottom: 20px; }
+      .content p { font-size: 16px; line-height: 1.6; }
+      .button { display: inline-block; background: #28a745; color: #ffffff; padding: 12px 25px; font-size: 18px; font-weight: bold; border-radius: 5px; text-decoration: none; margin-top: 20px; }
+      .button:hover { background: #218838; }
+      .footer { text-align: center; padding: 20px; font-size: 14px; color: #666666; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">🔥 The Quiz Has Started!</div>
+      <div class="content">
+        <h2>${quizTitle}</h2>
+        <p>It's time! The quiz you registered for is now live. Don't miss your chance to participate and prove your skills.</p>
+        <a href="${startUrl}" class="button">Start Quiz</a>
+      </div>
+      <div class="footer">© ${new Date().getFullYear()} Quizver | All rights reserved</div>
+    </div>
+  </body>
+  </html>`,
+})
