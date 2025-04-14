@@ -39,8 +39,8 @@ class PaymentService {
           quizId: data.quizId,
           userId: data.userId,
         },
-        callback_url: 'http://localhost:5173/user/payment/verify',
-        //callback_url: 'https://quizver.vercel.app/user/payment/verify'
+        //callback_url: 'http://localhost:5173/user/payment/verify',
+        callback_url: 'https://quizver.vercel.app/user/payment/verify'
       }
       form.metadata = {full_name: data.full_name, quizId: form.metadata?.quizId, userId: form.metadata?.userId }
       form.amount *= 100 // Convert to kobo (smallest unit for Paystack)

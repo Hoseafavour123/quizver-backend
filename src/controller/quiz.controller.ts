@@ -391,8 +391,8 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
   const users = await UserModel.find({})
 
-  //const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-  const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
+  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+  //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
 
 
   // Use Promise.all to handle asynchronous email sending
@@ -418,9 +418,9 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
     updatedQuiz.status = 'live'
     await updatedQuiz.save()
 
-   const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
+   //const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
 
-    //const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
+    const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
 
     await Promise.all(
       users.map((user) =>
