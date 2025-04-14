@@ -38,11 +38,22 @@ export const getAllQuizzes = catchErrors(async (req, res) => {
   })
 })
 
+
+export const isQuizCompleted = catchErrors(async (req, res) => {
+  const { quizId } = req.params
+
+  const quiz = CompletedQuiz.findOne({ userId: req.userId, quizId })
+  if (!quiz) {
+    return res.json({ isCompleted: false })
+  }
+  return res.json({ isCompleted: true })
+})
+
 export const getCompletedQuizzes = catchErrors(async (req, res) => {
   const page = parseInt((req.query.page as string) || '1')
   const limit = 10
   const skip = (page - 1) * limit
-
+  
   // Fetch completed quizzes for the user with pagination and sort by latest
   const quizzes = await CompletedQuiz.find({ userId: req.userId })
     .populate('quizId')
@@ -371,13 +382,18 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   appAssert(quiz, 404, 'Quiz not found')
 
   quiz.status = 'scheduled'
-  quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000)
+  //Assuming 'hours' is the number of hours you want to add
+  const nigeriaOffset = 1 // Nigeria is UTC +1
+  quiz.scheduledAt = new Date(
+    Date.now() + hours * 60 * 60 * 1000 + nigeriaOffset * 60 * 60 * 1000
+  )
   await quiz.save()
 
   const users = await UserModel.find({})
 
-  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-  //const quizPaymentUrl =  `http://localhost:5173/user/quiz/pay/${quizId}`
+  //const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+  const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
+
 
   // Use Promise.all to handle asynchronous email sending
   await Promise.all(
@@ -402,12 +418,9 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
     updatedQuiz.status = 'live'
     await updatedQuiz.save()
 
-    // Notify users about the quiz going live
-    // Use Promise.all to handle asynchronous email sending
+   const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
 
-    //const quizUrl = "http://localhost:5173/user/live-quiz"
-
-    const quizUrl = ' https://quizver.vercel.app/user/live-quiz'
+    //const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
 
     await Promise.all(
       users.map((user) =>
@@ -433,7 +446,7 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
       io.emit('quiz-ended', { quizId })
       console.log(`Quiz ${quizId} has ended.`)
     }, updatedQuiz.duration * 60 * 1000)
-  }, hours * 60 * 60 * 1000) // hours to ms
+  }, hours * 60 * 60 * 1000)
 
   return res.status(200).json({ message: 'Quiz scheduled successfully', quiz })
 })

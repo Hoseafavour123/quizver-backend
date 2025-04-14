@@ -18,7 +18,6 @@ import { createServer } from 'http';
 import { initSocket } from "./sockets/socket";
 import bodyParser from 'body-parser'
 
-
 dotenv.config()
 
 const app = express()

@@ -9,7 +9,6 @@ import { Response } from 'express'
 import CompletedQuiz from '../models/completedQuiz'
 
 
-
 export const getUserHandler = catchErrors(async (req, res) => {
   const user = await UserModel.findById(req.userId)
   appAssert(user, NOT_FOUND, 'User not found')
@@ -18,11 +17,19 @@ export const getUserHandler = catchErrors(async (req, res) => {
 
 // Delete a user
 export const deleteUser = catchErrors(async (req, res) => {
-  const { id } = req.params
-  const user = await UserModel.findByIdAndDelete(id)
-  appAssert(user, NOT_FOUND, 'The user does not exist')
-  res.status(200).json({ message: 'User deleted successfully' })
-})
+  const { id } = req.params;
+
+  const user = await UserModel.findByIdAndDelete(id);
+  await CompletedQuiz.deleteMany({ userId: id });
+  if (user?.imageInfo?.imageId) {
+    await cloudinary.v2.uploader.destroy(user.imageInfo.imageId);
+  }
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  res.status(200).json({ message: 'User deleted successfully' });
+});
 
 // Update a user
 export const updateUser = catchErrors(
@@ -55,10 +62,12 @@ export const updateUser = catchErrors(
       ...restData,
       ...(imageInfo && { imageInfo }), 
     }
+    
 
     if (password) {
     updateFields.password = await hashValue(password);
   }
+
 
     const updatedUser = await UserModel.findOneAndUpdate(
       { _id: req.userId },
@@ -74,15 +83,25 @@ export const updateUser = catchErrors(
 
 
 
-
 export const getAllUsers = catchErrors(async (req, res) => {
-  const users = await UserModel.find()
-  res.status(200).json({ users })
-})
+  const page = parseInt(req.query.page as string || '1', 10);
+  const limit = 10;
+  const skip = (page - 1) * limit;
 
+  const [users, total] = await Promise.all([
+    UserModel.find().skip(skip).limit(limit),
+    UserModel.countDocuments(),
+  ]);
 
+  const totalPages = Math.ceil(total / limit);
 
-
+  res.status(200).json({
+    users,
+    currentPage: page,
+    totalPages,
+    totalUsers: total,
+  });
+});
 
 
 
