@@ -7,6 +7,7 @@ export interface ICompletedQuiz extends Document {
   answers: Map<number, string> // Example: { "0": "B", "1": "A" }
   score: number
   totalQuestions: number
+  paymentsDistributed: boolean
   completedAt?: Date
 }
 
@@ -16,6 +17,7 @@ const completedQuizSchema = new Schema<ICompletedQuiz>({
   answers: { type: Map, of: String, required: true },
   score: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
+  paymentsDistributed: { type: Boolean, default: false },
   completedAt: { type: Date, default: Date.now },
 
 }, {

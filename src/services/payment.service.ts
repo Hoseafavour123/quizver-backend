@@ -1,6 +1,6 @@
 import Payment from '../models/payment.model'
 import _ from 'lodash'
-import {initializePayment, verifyPayment, PaymentForm} from '../utils/payments/payment'
+import {initializePayment, verifyPayment, PaymentForm, getBanks, createTransferRecipient, RecipientData, initiateTransfer, TransferData, verifyTransfer} from '../utils/payments/payment'
 import appAssert from '../utils/appAssert'
 import mongoose from 'mongoose'
 
@@ -10,6 +10,15 @@ interface PaymentData {
   amount: number
   email: string
   full_name: string
+}
+
+
+interface TransferRecipient {
+  metadata :{userId: mongoose.Types.ObjectId},
+  bankCode: string
+  accountNumber: string
+  email: string
+  fullName: string
 }
 
 interface VerifyPaymentResponse {
@@ -29,6 +38,49 @@ interface VerifyPaymentResponse {
 }
 
 class PaymentService {
+
+
+  async getBanks(): Promise<any> {
+    try {
+      const response = await getBanks()
+      return response
+    } catch (error: any) {
+      error.source = 'Get Banks Service'
+      throw error
+    }
+  }
+
+  async createTransferRecipient(data: TransferRecipient) {
+    try {
+      const response = await createTransferRecipient(data)
+      return response
+    } catch (error: any) {
+      error.source = 'Create Transfer Recipient Service'
+      throw error
+    }
+  }
+
+  async initiateTransfer(data: TransferData): Promise<any> {
+    try {
+      const response = await initiateTransfer(data)
+      return response
+    } catch (error: any) {
+      error.source = 'Initiate Transfer Service'
+      throw error
+    }
+  }
+
+  async verifyTransfer (transferCode: string) {
+    try {
+      const transferStatus = await verifyTransfer(transferCode as string)
+      return transferStatus
+    } catch (error: any) {
+      error.source = 'Verify transfer service'
+      throw error
+    }
+  }
+
+
   async startPayment(data: PaymentData): Promise<any> {
     try {
       const form: PaymentForm = {
@@ -94,6 +146,6 @@ class PaymentService {
       throw error
     }
   }
-}
 
+}
 export default PaymentService

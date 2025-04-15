@@ -145,6 +145,7 @@ export const getStats = catchErrors(
     //   userId,
     //   createdAt: { $gte: startDate },
     // })
+    
 
     appAssert(allTimeStats.length, 400, 'No quizzes found for this time frame')
 
@@ -200,3 +201,5 @@ export const getStats = catchErrors(
     })
   }
 )
+
+
