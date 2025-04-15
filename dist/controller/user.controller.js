@@ -21,7 +21,13 @@ exports.getUserHandler = (0, catchErrors_1.default)(async (req, res) => {
 exports.deleteUser = (0, catchErrors_1.default)(async (req, res) => {
     const { id } = req.params;
     const user = await user_model_1.default.findByIdAndDelete(id);
-    (0, appAssert_1.default)(user, http_1.NOT_FOUND, 'The user does not exist');
+    await completedQuiz_1.default.deleteMany({ userId: id });
+    if (user?.imageInfo?.imageId) {
+        await cloudinary_1.default.v2.uploader.destroy(user.imageInfo.imageId);
+    }
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
     res.status(200).json({ message: 'User deleted successfully' });
 });
 // Update a user
@@ -57,8 +63,20 @@ exports.updateUser = (0, catchErrors_1.default)(async (req, res) => {
     return res.status(200).json({ volunteer: updatedUser });
 });
 exports.getAllUsers = (0, catchErrors_1.default)(async (req, res) => {
-    const users = await user_model_1.default.find();
-    res.status(200).json({ users });
+    const page = parseInt(req.query.page || '1', 10);
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const [users, total] = await Promise.all([
+        user_model_1.default.find().skip(skip).limit(limit),
+        user_model_1.default.countDocuments(),
+    ]);
+    const totalPages = Math.ceil(total / limit);
+    res.status(200).json({
+        users,
+        currentPage: page,
+        totalPages,
+        totalUsers: total,
+    });
 });
 exports.getStats = (0, catchErrors_1.default)(async (req, res) => {
     const userId = req.userId;

@@ -17,6 +17,9 @@ const completedQuizSchema = new Schema<ICompletedQuiz>({
   score: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
   completedAt: { type: Date, default: Date.now },
+
+}, {
+  timestamps: true,
 })
 
 const CompletedQuiz = mongoose.model<ICompletedQuiz>(

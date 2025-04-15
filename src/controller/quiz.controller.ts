@@ -43,6 +43,7 @@ export const isQuizCompleted = catchErrors(async (req, res) => {
   const { quizId } = req.params
 
   const quiz = CompletedQuiz.findOne({ userId: req.userId, quizId })
+  
   if (!quiz) {
     return res.json({ isCompleted: false })
   }
@@ -309,8 +310,16 @@ export const goLive = catchErrors(async (req, res) => {
   return res.json({ message: 'Quiz is live!' })
 })
 
+
+export const getScheduledQuiz = catchErrors(async (req, res) => {
+  const scheduledQuiz = await Quiz.findOne({ status: 'scheduled' })
+
+  if (!scheduledQuiz) return res.status(400).json({ message: 'No scheduled quiz' })
+  return res.json(scheduledQuiz)
+})
+
 export const getLiveQuiz = catchErrors(async (req, res) => {
-  const liveQuiz = await Quiz.findOne({ status: 'scheduled' })
+  const liveQuiz = await Quiz.findOne({ status: 'live' })
 
   if (!liveQuiz) return res.status(400).json({ message: 'No live quiz' })
   return res.json(liveQuiz)
@@ -370,7 +379,6 @@ export const getLeaderboardData = catchErrors(async (req, res) => {
 })
 
 
-
 export const scheduleQuiz = catchErrors(async (req, res) => {
   const { quizId } = req.params
   const { hours } = req.body
@@ -378,36 +386,39 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   appAssert(quizId, 400, 'Quiz ID is required')
   appAssert(hours, 400, 'Hours until start is required')
 
+  const currentLive = await Quiz.findOne({ status: 'scheduled'})
+  const currentScheduled = await Quiz.findOne({ status: 'live'})
+
+  if (currentLive || currentScheduled) {
+    return res.status(400).json({ message: 'A quiz is already scheduled or live' })
+  }
   const quiz = await Quiz.findById(quizId)
   appAssert(quiz, 404, 'Quiz not found')
 
   quiz.status = 'scheduled'
   //Assuming 'hours' is the number of hours you want to add
-  const nigeriaOffset = 1 // Nigeria is UTC +1
-  quiz.scheduledAt = new Date(
-    Date.now() + hours * 60 * 60 * 1000 + nigeriaOffset * 60 * 60 * 1000
-  )
+  quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000)
   await quiz.save()
 
   const users = await UserModel.find({})
 
-  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-  //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
+  //const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+  const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
 
 
-  // Use Promise.all to handle asynchronous email sending
-  await Promise.all(
-    users.map((user) =>
-      sendMail({
-        email: user.email,
-        ...getNewQuizNotificationTemplate(
-          quiz?.title || 'New Quiz',
-          quizPaymentUrl,
-          hours
-        ),
-      })
-    )
-  )
+  // // Use Promise.all to handle asynchronous email sending
+  // await Promise.all(
+  //   users.map((user) =>
+  //     sendMail({
+  //       email: user.email,
+  //       ...getNewQuizNotificationTemplate(
+  //         quiz?.title || 'New Quiz',
+  //         quizPaymentUrl,
+  //         hours
+  //       ),
+  //     })
+  //   )
+  // )
 
   await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
 
@@ -418,18 +429,18 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
     updatedQuiz.status = 'live'
     await updatedQuiz.save()
 
-   //const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
+   const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
 
-    const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
+    //const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
 
-    await Promise.all(
-      users.map((user) =>
-        sendMail({
-          email: user.email,
-          ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
-        })
-      )
-    )
+    // await Promise.all(
+    //   users.map((user) =>
+    //     sendMail({
+    //       email: user.email,
+    //       ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
+    //     })
+    //   )
+    // )
 
     const io = getSocket()
 

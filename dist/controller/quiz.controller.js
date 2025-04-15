@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scheduleQuiz = exports.getLeaderboardData = exports.getLiveQuiz = exports.goLive = exports.submitQuiz = exports.deleteQuiz = exports.updateQuiz = exports.createQuiz = exports.getCompletedQuizzes = exports.getAllQuizzes = exports.getQuiz = void 0;
+exports.scheduleQuiz = exports.getLeaderboardData = exports.getLiveQuiz = exports.goLive = exports.submitQuiz = exports.deleteQuiz = exports.updateQuiz = exports.createQuiz = exports.getCompletedQuizzes = exports.isQuizCompleted = exports.getAllQuizzes = exports.getQuiz = void 0;
 const quiz_model_1 = __importDefault(require("../models/quiz.model"));
 const cloudinary_1 = require("cloudinary");
 const quiz_schema_1 = require("./quiz.schema");
@@ -37,6 +37,14 @@ exports.getAllQuizzes = (0, catchErrors_1.default)(async (req, res) => {
         totalPages: Math.ceil(totalQuizzes / limit),
         totalQuizzes,
     });
+});
+exports.isQuizCompleted = (0, catchErrors_1.default)(async (req, res) => {
+    const { quizId } = req.params;
+    const quiz = completedQuiz_1.default.findOne({ userId: req.userId, quizId });
+    if (!quiz) {
+        return res.json({ isCompleted: false });
+    }
+    return res.json({ isCompleted: true });
 });
 exports.getCompletedQuizzes = (0, catchErrors_1.default)(async (req, res) => {
     const page = parseInt(req.query.page || '1');
@@ -302,12 +310,13 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const quiz = await quiz_model_1.default.findById(quizId);
     (0, appAssert_1.default)(quiz, 404, 'Quiz not found');
     quiz.status = 'scheduled';
-    quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+    //Assuming 'hours' is the number of hours you want to add
+    const nigeriaOffset = 1; // Nigeria is UTC +1
+    quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000 + nigeriaOffset * 60 * 60 * 1000);
     await quiz.save();
     const users = await user_model_1.default.find({});
-    const quizPaymentUrl = process.env.ENVIRONMENT == 'production'
-        ? `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-        : `http://localhost:5173/user/quiz/pay/${quizId}`;
+    const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`;
+    //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
     // Use Promise.all to handle asynchronous email sending
     await Promise.all(users.map((user) => (0, sendMail_1.sendMail)({
         email: user.email,
@@ -319,11 +328,11 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
         (0, appAssert_1.default)(updatedQuiz, 404, 'Quiz not found');
         updatedQuiz.status = 'live';
         await updatedQuiz.save();
-        // Notify users about the quiz going live
-        // Use Promise.all to handle asynchronous email sending
+        //const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
+        const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`;
         await Promise.all(users.map((user) => (0, sendMail_1.sendMail)({
             email: user.email,
-            ...(0, emailTemplates_1.getQuizNowLiveTemplate)(quiz?.title || 'Live Quiz', `${process.env.ENVIRONMENT == 'development' ? 'http://localhost:5173/user/live-quiz' : 'https://quizver.vercel.app/user/live-quiz'} `)
+            ...(0, emailTemplates_1.getQuizNowLiveTemplate)(quiz?.title || 'Live Quiz', quizUrl),
         })));
         const io = (0, socket_1.getSocket)();
         io.emit('quiz-live', { quizId });
@@ -336,6 +345,6 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
             io.emit('quiz-ended', { quizId });
             console.log(`Quiz ${quizId} has ended.`);
         }, updatedQuiz.duration * 60 * 1000);
-    }, hours * 60 * 60 * 1000); // hours to ms
+    }, hours * 60 * 60 * 1000);
     return res.status(200).json({ message: 'Quiz scheduled successfully', quiz });
 });
