@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { createQuiz, deleteQuiz, getAllQuizzes, getCompletedQuizzes, getLatestQuiz, getLeaderboardData, getLiveQuiz, getQuiz,  getScheduledQuiz,  goLive,  isQuizCompleted,  scheduleQuiz,  submitQuiz,  updateQuiz } from "../controller/quiz.controller";
+import { createQuiz, deleteQuiz, getAllQuizzes, getCompletedQuizzes, getCompletedQuizzesAnswers, getLatestQuiz, getLeaderboardData, getLiveQuiz, getQuiz,  getScheduledQuiz,  goLive,  isQuizCompleted,  scheduleQuiz,  submitQuiz,  updateQuiz } from "../controller/quiz.controller";
 import { uploadMiddleware } from "../middleware/uploadMiddleware";
 
 const router = Router()
 
+
+router.get('/completed-quiz-answers/:quizId', getCompletedQuizzesAnswers)
 router.get('/latest-leaderboard', getLatestQuiz)
 router.get('/check-completed/:id', isQuizCompleted)
 router.get('/get-live-quiz', getLiveQuiz)

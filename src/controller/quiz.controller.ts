@@ -107,6 +107,29 @@ export const isQuizCompleted = catchErrors(async (req, res) => {
   return res.json({ isCompleted: true })
 })
 
+
+export const getCompletedQuizzesAnswers = catchErrors(async (req, res) => {
+
+  const completedQuiz = await CompletedQuiz.findOne({_id:req.params.quizId, userId:req.userId})
+  appAssert(completedQuiz, 404, 'Completed quiz not found')
+
+
+  if (!completedQuiz)
+    return res.status(404).json({ error: 'Completed quiz not found' })
+
+  const quiz = await Quiz.findById(completedQuiz.quizId)
+
+  if (!quiz) return res.status(404).json({ error: 'Quiz not found' })
+
+  return res.json({
+    completedQuiz,
+    quiz: {
+      title: quiz.title,
+      questions: quiz.questions,
+    },
+  })
+})
+
 export const getCompletedQuizzes = catchErrors(async (req, res) => {
   const page = parseInt((req.query.page as string) || '1')
   const limit = 10
@@ -115,7 +138,7 @@ export const getCompletedQuizzes = catchErrors(async (req, res) => {
   // Fetch completed quizzes for the user with pagination and sort by latest
   const quizzes = await CompletedQuiz.find({ userId: req.userId })
     .populate('quizId')
-    .sort({ createdAt: -1 }) // Sort by latest quizzes first
+    .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
 
