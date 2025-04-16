@@ -88,6 +88,8 @@ export const createAccount = async (data: CreateAccountParams) => {
   })
 
   const notification = new Notification({
+    userId,
+    type:'welcome',
     title: `Welcome ${user.firstName}!`,
     message: "Welcome to Quizver, we're glad to have you!"
   })
