@@ -4,8 +4,8 @@ import mongoose from 'mongoose'
 
 dotenv.config()
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string
-//const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_TEST_SECRET_KEY as string
+//const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_TEST_SECRET_KEY as string
 
 export interface PaymentForm {
   callback_url: string
