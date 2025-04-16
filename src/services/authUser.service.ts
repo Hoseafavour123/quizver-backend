@@ -28,6 +28,7 @@ import {
   getVerifyEmailTemplate,
 } from '../utils/emailTtemplates'
 import { hashValue } from '../utils/bcrypt'
+import { Notification } from '../models/notification.model'
 
 export type CreateAccountParams = {
   email: string
@@ -85,6 +86,13 @@ export const createAccount = async (data: CreateAccountParams) => {
     userId,
     sessionId: session._id,
   })
+
+  const notification = new Notification({
+    title: `Welcome ${user.firstName}!`,
+    message: "Welcome to Quizver, we're glad to have you!"
+  })
+
+  await notification.save()
 
   return {
     user: user.omitPassword(),

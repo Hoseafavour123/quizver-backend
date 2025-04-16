@@ -6,6 +6,7 @@ export interface AdminDocument extends mongoose.Document {
   email: string
   password: string
   verified: boolean
+  role: 'chief_admin' | 'platform_admin'
   imageInfo: { imageUrl: string; imageId: string }
   createdAt: Date
   updatedAt: Date
@@ -13,11 +14,17 @@ export interface AdminDocument extends mongoose.Document {
   omitPassword: () => Omit<AdminDocument, 'password'>
 }
 
+
 const AdminSchema = new mongoose.Schema<AdminDocument>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    role: {
+    type: String,
+    enum: ['chief_admin', 'platform_admin'],
+    default: 'platform_admin',
+  },
     imageInfo: {
       imageUrl: { type: String, default:'' },
       imageId: { type: String, default:'' },

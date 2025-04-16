@@ -6,8 +6,11 @@ import QuizModel from '../models/quiz.model'
 import { sendMail } from '../utils/sendMail'
 import Payment from '../models/payment.model'
 import PaymentProfile from '../models/paymentProfile.model'
+import { Notification } from '../models/notification.model'
 import { getNewQuizNotificationTemplate } from '../utils/emailTemplates'
 import appAssert from '../utils/appAssert'
+import CompletedQuiz from '../models/completedQuiz'
+import { Earning } from '../models/earnings.model'
 
 // Initialize PaymentService instance
 const paymentInstance = new PaymentService()
@@ -28,23 +31,33 @@ export const getBanks = async (req: Request, res: Response): Promise<void> => {
 }
 
 export const createTransferRecipient = catchErrors(async (req, res) => {
-  const { accountNumber, bankCode, email, fullName, userId } = req.body
+  const { email } = req.body
+  const {userId} = req.query
+  console.log(email)
+
+  const userPaymentProfile = await PaymentProfile.findOne({userId})
+  if (!userPaymentProfile) {
+    return res.status(404).json({ message: 'Payment profile not found' })
+  }
+  appAssert(userPaymentProfile, 404, 'Payment profile not found')
 
   const data = {
-    accountNumber,
-    bankCode,
+    accountNumber: userPaymentProfile.accountNumber,
+    bankCode: userPaymentProfile.bankCode,
     email,
-    fullName,
-    metadata: { userId },
+    fullName: userPaymentProfile.name,
+    metadata: { userId: userPaymentProfile.userId },
   }
 
   const recipient = await paymentInstance.createTransferRecipient(data)
   appAssert(recipient, 500, 'Failed to create transfer recipient')
-  return res.json({ recipient })
+  return res.json({ recipient: recipient.data })
 })
 
+
 export const initiateTransfer = catchErrors(async (req, res) => {
-  const { amount, recipientCode, email } = req.body
+  const { amount, recipientCode, email, userId } = req.body
+  const quizId = req.query.quizId
 
   const data = {
     amount,
@@ -52,10 +65,49 @@ export const initiateTransfer = catchErrors(async (req, res) => {
     email,
   }
 
+   const completedQuiz = await CompletedQuiz.findOne({
+    quizId,
+    userId,
+   })
+
+   appAssert(completedQuiz, 404, 'Quiz result not found for user')
+
+
+   if (!completedQuiz) {
+     return res.status(404).json({ message: 'Quiz result not found for user' })
+   }
+
+
+   if (completedQuiz.rewarded) {
+     return res.status(400).json({ message: 'User has already been rewarded' })
+   }
+
   const transfer = await paymentInstance.initiateTransfer(data)
-  appAssert(transfer, 500, 'Failed to initiate transfer')
-  console.log(transfer)
-  // return res.json({ transfer })
+
+  appAssert(transfer, 401, 'Transfer not successfull')
+
+  const earning = new Earning({
+    userId,
+    quizId,
+    amount
+  })
+
+  await earning.save()
+
+  const notification = new Notification({
+    userId,
+    type:'payment',
+    title: 'Congratulations! Payment Sent!',
+    message: `You just received a payment of N${amount} for being a top scorer in the recnt quiz`
+  })
+
+  await notification.save()
+  
+  completedQuiz.rewarded = true
+  
+  await completedQuiz.save()
+
+  return res.json({ transfer })
 })
 
 export const verifyTransfer = catchErrors(async (req, res) => {

@@ -9,20 +9,26 @@ export interface ICompletedQuiz extends Document {
   totalQuestions: number
   paymentsDistributed: boolean
   completedAt?: Date
+  rewarded: boolean
 }
 
-const completedQuizSchema = new Schema<ICompletedQuiz>({
-  userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
-  quizId: { type: Schema.Types.ObjectId, required: true, ref:'Quiz' },
-  answers: { type: Map, of: String, required: true },
-  score: { type: Number, required: true },
-  totalQuestions: { type: Number, required: true },
-  paymentsDistributed: { type: Boolean, default: false },
-  completedAt: { type: Date, default: Date.now },
 
-}, {
-  timestamps: true,
-})
+const completedQuizSchema = new Schema<ICompletedQuiz>(
+  {
+    userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    quizId: { type: Schema.Types.ObjectId, required: true, ref: 'Quiz' },
+    answers: { type: Map, of: String, required: true },
+    score: { type: Number, required: true },
+    totalQuestions: { type: Number, required: true },
+    paymentsDistributed: { type: Boolean, default: false },
+    completedAt: { type: Date, default: Date.now },
+    rewarded: { type: Boolean, default: false },
+  },
+  {
+    timestamps: true,
+  }
+)
+
 
 const CompletedQuiz = mongoose.model<ICompletedQuiz>(
   'CompletedQuiz',

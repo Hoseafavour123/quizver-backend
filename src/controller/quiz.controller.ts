@@ -10,6 +10,7 @@ import mongoose from 'mongoose'
 import { sendMail } from '../utils/sendMail'
 import QuizModel from '../models/quiz.model'
 import { getNewQuizNotificationTemplate, getQuizNowLiveTemplate } from '../utils/emailTemplates'
+import { Notification } from '../models/notification.model'
 
 // Get single quiz
 export const getQuiz = catchErrors(async (req, res) => {
@@ -17,6 +18,62 @@ export const getQuiz = catchErrors(async (req, res) => {
   const quiz = await Quiz.findById(id)
   appAssert(quiz, 404, 'Quiz not found')
   return res.json(quiz)
+})
+
+export const getLatestQuiz = catchErrors(async (req, res) => {
+  const [latestQuiz] = await CompletedQuiz.find()
+    .sort({ completedAt: -1 })
+    .limit(1)
+
+  if (!latestQuiz) {
+    return res.status(404).json({ message: 'No completed quizzes found.' })
+  }
+
+  const quiz = await Quiz.findById(latestQuiz.quizId)
+
+
+  const quizId = latestQuiz.quizId
+
+  const participants = await CompletedQuiz.find({ quizId })
+    .sort({ score: -1 })
+    .populate('userId', 'firstName lastName email imageInfo')
+    .populate('quizId', 'title')
+
+  const leaderboard = participants.map((p) => {
+    const user = p.userId as unknown as {
+      _id: string
+      firstName: string
+      lastName: string
+      email: string
+      imageInfo: {
+        imageUrl: string,
+        imageId: string
+      }
+    }
+
+    return {
+      id: p._id,
+      userId: user._id,
+      name: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      score: p.score,
+      rewarded: p.rewarded ?? false,
+      imageUrl: user.imageInfo.imageUrl
+    }
+  })
+
+
+  const totalParticipants = participants.length
+
+  const quizTitle = quiz?.title || 'Sample Quiz'
+
+  res.json({
+    quizId,
+    quizTitle,
+    leaderboard,
+    totalParticipants,
+    paymentsDistributed: latestQuiz.paymentsDistributed,
+  })
 })
 
 // Get all quizzes
@@ -127,6 +184,8 @@ export const createQuiz = catchErrors(async (req, res) => {
   })
 
   await newQuiz.save()
+
+  
   res.status(201).json({ message: 'Quiz created successfully!' })
 })
 
@@ -400,25 +459,34 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000)
   await quiz.save()
 
+  const notification = new Notification({
+    type: 'update',
+    title: 'A new quiz is scheduled!',
+    message: 'A new quiz will go live soon, you must have a Payment profile to receive payments, go to the Payment Profile section to create one',
+
+  })
+
+  await notification.save()
+
   const users = await UserModel.find({})
 
-  //const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
-  const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
+  const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`
+  //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
 
 
-  // // Use Promise.all to handle asynchronous email sending
-  // await Promise.all(
-  //   users.map((user) =>
-  //     sendMail({
-  //       email: user.email,
-  //       ...getNewQuizNotificationTemplate(
-  //         quiz?.title || 'New Quiz',
-  //         quizPaymentUrl,
-  //         hours
-  //       ),
-  //     })
-  //   )
-  // )
+  // Use Promise.all to handle asynchronous email sending
+  await Promise.all(
+    users.map((user) =>
+      sendMail({
+        email: user.email,
+        ...getNewQuizNotificationTemplate(
+          quiz?.title || 'New Quiz',
+          quizPaymentUrl,
+          hours
+        ),
+      })
+    )
+  )
 
   await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
 
@@ -429,18 +497,18 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
     updatedQuiz.status = 'live'
     await updatedQuiz.save()
 
-   const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
+   //const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
 
-    //const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
+    const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`
 
-    // await Promise.all(
-    //   users.map((user) =>
-    //     sendMail({
-    //       email: user.email,
-    //       ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
-    //     })
-    //   )
-    // )
+    await Promise.all(
+      users.map((user) =>
+        sendMail({
+          email: user.email,
+          ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
+        })
+      )
+    )
 
     const io = getSocket()
 

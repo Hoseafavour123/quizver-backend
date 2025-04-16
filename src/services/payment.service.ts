@@ -1,8 +1,19 @@
 import Payment from '../models/payment.model'
 import _ from 'lodash'
-import {initializePayment, verifyPayment, PaymentForm, getBanks, createTransferRecipient, RecipientData, initiateTransfer, TransferData, verifyTransfer} from '../utils/payments/payment'
+import {
+  initializePayment,
+  verifyPayment,
+  PaymentForm,
+  getBanks,
+  createTransferRecipient,
+  initiateTransfer,
+  TransferData,
+  verifyTransfer,
+} from '../utils/payments/payment'
 import appAssert from '../utils/appAssert'
+import { Notification } from '../models/notification.model'
 import mongoose from 'mongoose'
+import QuizModel from '../models/quiz.model'
 
 interface PaymentData {
   userId: mongoose.Types.ObjectId
@@ -12,9 +23,8 @@ interface PaymentData {
   full_name: string
 }
 
-
 interface TransferRecipient {
-  metadata :{userId: mongoose.Types.ObjectId},
+  metadata: { userId: mongoose.Types.ObjectId }
   bankCode: string
   accountNumber: string
   email: string
@@ -33,13 +43,11 @@ interface VerifyPaymentResponse {
       full_name: string
       quizId: any
       userId: any
-}
+    }
   }
 }
 
 class PaymentService {
-
-
   async getBanks(): Promise<any> {
     try {
       const response = await getBanks()
@@ -70,7 +78,7 @@ class PaymentService {
     }
   }
 
-  async verifyTransfer (transferCode: string) {
+  async verifyTransfer(transferCode: string) {
     try {
       const transferStatus = await verifyTransfer(transferCode as string)
       return transferStatus
@@ -79,7 +87,6 @@ class PaymentService {
       throw error
     }
   }
-
 
   async startPayment(data: PaymentData): Promise<any> {
     try {
@@ -91,10 +98,14 @@ class PaymentService {
           quizId: data.quizId,
           userId: data.userId,
         },
-        callback_url: 'http://localhost:5173/user/payment/verify',
-        //callback_url: 'https://quizver.vercel.app/user/payment/verify'
+        //callback_url: 'http://localhost:5173/user/payment/verify',
+        callback_url: 'https://quizver.vercel.app/user/payment/verify'
       }
-      form.metadata = {full_name: data.full_name, quizId: form.metadata?.quizId, userId: form.metadata?.userId }
+      form.metadata = {
+        full_name: data.full_name,
+        quizId: form.metadata?.quizId,
+        userId: form.metadata?.userId,
+      }
       form.amount *= 100 // Convert to kobo (smallest unit for Paystack)
 
       const response = await initializePayment(form)
@@ -107,7 +118,7 @@ class PaymentService {
 
   async createPayment(reference: string): Promise<any> {
     appAssert(reference, 400, 'No reference provided!')
-    
+
     try {
       const response: VerifyPaymentResponse = await verifyPayment(reference)
 
@@ -118,7 +129,7 @@ class PaymentService {
       const { reference: paymentReference, amount, status } = response.data
       const { email } = response.data.customer
       const { userId, quizId, full_name } = response.data.metadata
-    
+
       const newPayment = new Payment({
         reference: paymentReference,
         full_name,
@@ -130,6 +141,17 @@ class PaymentService {
       })
       await newPayment.save()
 
+      const quiz = await QuizModel.findOne({_id: quizId})
+
+      const notification = new Notification({
+        userId,
+        type: 'payment',
+        title: 'Quiz Payment',
+        message: `You have successfully paid for ${quiz?.title}`,
+      })
+
+      await notification.save()
+
       return newPayment
     } catch (error: any) {
       error.source = 'Create Payment Service'
@@ -139,13 +161,14 @@ class PaymentService {
 
   async paymentReceipt(reference: string): Promise<any> {
     try {
-      const transaction = await Payment.findOne({ reference }).populate('quizId')
+      const transaction = await Payment.findOne({ reference }).populate(
+        'quizId'
+      )
       return transaction
     } catch (error: any) {
       error.source = 'Payment Receipt'
       throw error
     }
   }
-
 }
 export default PaymentService

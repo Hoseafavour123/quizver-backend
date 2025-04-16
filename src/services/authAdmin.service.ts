@@ -9,7 +9,6 @@ import VerificationCodeTypes from '../constants/verificationcodetypes'
 import SessionModel from '../models/session.model'
 import AdminModel from '../models/admin.model'
 import VerificationCodeModel from '../models/verificationCode.model'
-import jwt from 'jsonwebtoken'
 import appAssert from '../utils/appAssert'
 import { RefreshTokenPayload, refreshTokenSignOptions, signToken, verifyToken } from '../utils/jwt'
 import {

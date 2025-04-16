@@ -4,7 +4,7 @@ import { startPayment, createPayment, getPayment, notifyUsersForPayment, isQuizP
 const router = express.Router();
 
 router.get('/banks', getBanks)
-router.post('/create-transfer-recipient', createTransferRecipient)
+router.post('/create-recipient', createTransferRecipient)
 router.post('/initiate-transfer', initiateTransfer)
 router.post('/verify-transfer', verifyTransfer)
 router.get('/quiz-paid/:quizId', isQuizPaidFor)

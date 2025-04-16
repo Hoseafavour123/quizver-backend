@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express'
+import express from 'express'
 import dotenv from 'dotenv'
 import cors from 'cors'
 import errorHandler from './middleware/errorHandler'
@@ -8,6 +8,7 @@ import userRoutes from './routes/user.route'
 import adminRoutes from './routes/admin.route'
 import QuizRoutes from './routes/quiz.route'
 import paymentRoute from './routes/payment.route'
+import notificationRoute from './routes/notifications.route'
 import sessionRoutes from './routes/session.route'
 import connectDB from './config/db'
 import cookieParser from 'cookie-parser'
@@ -60,6 +61,7 @@ app.use('/sessions', authenticate, sessionRoutes)
 app.use('/quiz', authenticate, QuizRoutes)
 
 app.use('/payment', authenticate, paymentRoute)
+app.use('/notification', authenticate, notificationRoute)
 
 app.use(errorHandler)
 
@@ -68,6 +70,5 @@ httpServer.listen(port, async () => {
   console.log(`Server is running on http://localhost:${port}`)
   await connectDB()
 })
-
 
 export default app

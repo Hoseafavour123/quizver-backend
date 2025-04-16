@@ -58,16 +58,38 @@ export const updateAdmin = catchErrors(async (req, res) => {
   return res.status(200).json({ admin: updatedAdmin })
 })
 
-export const getAllAdmin = catchErrors(async (req, res) => {
-  const admins = await AdminModel.find()
-  res.status(200).json({ admins })
+export const getAllAdmins = catchErrors(async (req, res) => {
+  const chiefAdmin = await AdminModel.findOne({
+    role: 'chief_admin',
+    _id: req.userId
+  })
+
+  if (!chiefAdmin) {
+    return res.status(403).json({ message: 'Access denied' })
+  }
+  
+  const admins = await AdminModel.find({}).select('-password')
+  res.json(admins)
 })
+
 
 export const deleteAdmin = catchErrors(async (req, res) => {
   const { id } = req.params
+   const chiefAdmin = await AdminModel.findOne({
+     role: 'chief_admin',
+     _id: req.userId,
+   })
+
+   if (!chiefAdmin) {
+     return res.status(403).json({ message: 'Access denied' })
+   }
+
+   if (chiefAdmin._id == req.params.id) {
+    return res.status(403).json({ message: 'Cannot delete chief admin'})
+   }
   const admin = await AdminModel.findByIdAndDelete(id)
-  appAssert(admin, NOT_FOUND, 'The organisation does not exist')
-  res.status(200).json({ message: 'Organisation deleted successfully' })
+  appAssert(admin, NOT_FOUND, 'The admin does not exist')
+  res.status(200).json({ message: 'admin deleted successfully' })
 })
 
 
