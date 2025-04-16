@@ -34,17 +34,11 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const completedQuizSchema = new mongoose_1.Schema({
+const PaymentProfileSchema = new mongoose_1.Schema({
+    name: { type: String, required: true },
+    accountNumber: { type: String, required: true },
+    bankName: { type: String, required: true },
+    bankCode: { type: String, required: true },
     userId: { type: mongoose_1.Schema.Types.ObjectId, required: true, ref: 'User' },
-    quizId: { type: mongoose_1.Schema.Types.ObjectId, required: true, ref: 'Quiz' },
-    answers: { type: Map, of: String, required: true },
-    score: { type: Number, required: true },
-    totalQuestions: { type: Number, required: true },
-    paymentsDistributed: { type: Boolean, default: false },
-    completedAt: { type: Date, default: Date.now },
-    rewarded: { type: Boolean, default: false },
-}, {
-    timestamps: true,
-});
-const CompletedQuiz = mongoose_1.default.model('CompletedQuiz', completedQuizSchema);
-exports.default = CompletedQuiz;
+}, { timestamps: true });
+exports.default = mongoose_1.default.model("PaymentProfile", PaymentProfileSchema);

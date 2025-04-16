@@ -6,7 +6,49 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const payment_model_1 = __importDefault(require("../models/payment.model"));
 const payment_1 = require("../utils/payments/payment");
 const appAssert_1 = __importDefault(require("../utils/appAssert"));
+const notification_model_1 = require("../models/notification.model");
+const quiz_model_1 = __importDefault(require("../models/quiz.model"));
 class PaymentService {
+    async getBanks() {
+        try {
+            const response = await (0, payment_1.getBanks)();
+            return response;
+        }
+        catch (error) {
+            error.source = 'Get Banks Service';
+            throw error;
+        }
+    }
+    async createTransferRecipient(data) {
+        try {
+            const response = await (0, payment_1.createTransferRecipient)(data);
+            return response;
+        }
+        catch (error) {
+            error.source = 'Create Transfer Recipient Service';
+            throw error;
+        }
+    }
+    async initiateTransfer(data) {
+        try {
+            const response = await (0, payment_1.initiateTransfer)(data);
+            return response;
+        }
+        catch (error) {
+            error.source = 'Initiate Transfer Service';
+            throw error;
+        }
+    }
+    async verifyTransfer(transferCode) {
+        try {
+            const transferStatus = await (0, payment_1.verifyTransfer)(transferCode);
+            return transferStatus;
+        }
+        catch (error) {
+            error.source = 'Verify transfer service';
+            throw error;
+        }
+    }
     async startPayment(data) {
         try {
             const form = {
@@ -20,7 +62,11 @@ class PaymentService {
                 //callback_url: 'http://localhost:5173/user/payment/verify',
                 callback_url: 'https://quizver.vercel.app/user/payment/verify'
             };
-            form.metadata = { full_name: data.full_name, quizId: form.metadata?.quizId, userId: form.metadata?.userId };
+            form.metadata = {
+                full_name: data.full_name,
+                quizId: form.metadata?.quizId,
+                userId: form.metadata?.userId,
+            };
             form.amount *= 100; // Convert to kobo (smallest unit for Paystack)
             const response = await (0, payment_1.initializePayment)(form);
             return response;
@@ -50,6 +96,14 @@ class PaymentService {
                 status,
             });
             await newPayment.save();
+            const quiz = await quiz_model_1.default.findOne({ _id: quizId });
+            const notification = new notification_model_1.Notification({
+                userId,
+                type: 'payment',
+                title: 'Quiz Payment',
+                message: `You have successfully paid for ${quiz?.title}`,
+            });
+            await notification.save();
             return newPayment;
         }
         catch (error) {
@@ -59,7 +113,7 @@ class PaymentService {
     }
     async paymentReceipt(reference) {
         try {
-            const transaction = await payment_model_1.default.findOne({ reference });
+            const transaction = await payment_model_1.default.findOne({ reference }).populate('quizId');
             return transaction;
         }
         catch (error) {

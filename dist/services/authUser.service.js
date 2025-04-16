@@ -14,6 +14,7 @@ const date_1 = require("../utils/date");
 const sendMail_1 = require("../utils/sendMail");
 const emailTtemplates_1 = require("../utils/emailTtemplates");
 const bcrypt_1 = require("../utils/bcrypt");
+const notification_model_1 = require("../models/notification.model");
 const createAccount = async (data) => {
     const existingUser = await user_model_1.default.exists({ email: data.email });
     (0, appAssert_1.default)(!existingUser, http_1.CONFLICT, 'User with this email already exists');
@@ -44,6 +45,11 @@ const createAccount = async (data) => {
         userId,
         sessionId: session._id,
     });
+    const notification = new notification_model_1.Notification({
+        title: `Welcome ${user.firstName}!`,
+        message: "Welcome to Quizver, we're glad to have you!"
+    });
+    await notification.save();
     return {
         user: user.omitPassword(),
         accessToken,

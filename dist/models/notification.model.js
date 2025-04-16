@@ -33,18 +33,18 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Notification = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const completedQuizSchema = new mongoose_1.Schema({
-    userId: { type: mongoose_1.Schema.Types.ObjectId, required: true, ref: 'User' },
-    quizId: { type: mongoose_1.Schema.Types.ObjectId, required: true, ref: 'Quiz' },
-    answers: { type: Map, of: String, required: true },
-    score: { type: Number, required: true },
-    totalQuestions: { type: Number, required: true },
-    paymentsDistributed: { type: Boolean, default: false },
-    completedAt: { type: Date, default: Date.now },
-    rewarded: { type: Boolean, default: false },
-}, {
-    timestamps: true,
+const NotificationSchema = new mongoose_1.Schema({
+    userId: { type: mongoose_1.default.Types.ObjectId, ref: 'User', required: false }, // null = general
+    type: {
+        type: String,
+        enum: ['payment', 'welcome', 'update'],
+        required: true,
+    },
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+    readBy: [{ type: mongoose_1.default.Types.ObjectId, ref: 'User' }],
+    createdAt: { type: Date, default: Date.now },
 });
-const CompletedQuiz = mongoose_1.default.model('CompletedQuiz', completedQuizSchema);
-exports.default = CompletedQuiz;
+exports.Notification = mongoose_1.default.model('Notification', NotificationSchema);

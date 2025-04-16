@@ -8,7 +8,7 @@ const router = (0, express_1.Router)();
 router.get('/users', user_controller_1.getAllUsers);
 router.get('/get-stats', admin_controller_1.getAdminStats);
 router.get('/', admin_controller_1.getAdminHandler);
-router.get('/all', admin_controller_1.getAllAdmin);
+router.get('/all', admin_controller_1.getAllAdmins);
 router.delete('/:id', admin_controller_1.deleteAdmin);
 router.put('/update', uploadMiddleware_1.uploadMiddleware, admin_controller_1.updateAdmin);
 exports.default = router;

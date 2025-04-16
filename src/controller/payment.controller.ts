@@ -39,8 +39,6 @@ export const createTransferRecipient = catchErrors(async (req, res) => {
   if (!userPaymentProfile) {
     return res.status(404).json({ message: 'Payment profile not found' })
   }
-  appAssert(userPaymentProfile, 404, 'Payment profile not found')
-
   const data = {
     accountNumber: userPaymentProfile.accountNumber,
     bankCode: userPaymentProfile.bankCode,

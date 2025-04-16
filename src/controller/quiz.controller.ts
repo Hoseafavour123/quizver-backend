@@ -497,6 +497,16 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
     updatedQuiz.status = 'live'
     await updatedQuiz.save()
 
+     const notification = new Notification({
+       type: 'update',
+       title: `${updatedQuiz.title} is live!`,
+       message:
+         "Dont miss the opportunity to earn from this quiz!",
+     })
+
+     await notification.save()
+
+
    //const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
 
     const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`

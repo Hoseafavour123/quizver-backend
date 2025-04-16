@@ -14,6 +14,7 @@ const user_route_1 = __importDefault(require("./routes/user.route"));
 const admin_route_1 = __importDefault(require("./routes/admin.route"));
 const quiz_route_1 = __importDefault(require("./routes/quiz.route"));
 const payment_route_1 = __importDefault(require("./routes/payment.route"));
+const notifications_route_1 = __importDefault(require("./routes/notifications.route"));
 const session_route_1 = __importDefault(require("./routes/session.route"));
 const db_1 = __importDefault(require("./config/db"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
@@ -50,6 +51,7 @@ app.use('/admin', authenticate_1.default, admin_route_1.default);
 app.use('/sessions', authenticate_1.default, session_route_1.default);
 app.use('/quiz', authenticate_1.default, quiz_route_1.default);
 app.use('/payment', authenticate_1.default, payment_route_1.default);
+app.use('/notification', authenticate_1.default, notifications_route_1.default);
 app.use(errorHandler_1.default);
 httpServer.listen(port, async () => {
     console.log(`Server is running on http://localhost:${port}`);

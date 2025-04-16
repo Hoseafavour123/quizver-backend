@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdminStats = exports.deleteAdmin = exports.getAllAdmin = exports.updateAdmin = exports.getAdminHandler = void 0;
+exports.getAdminStats = exports.deleteAdmin = exports.getAllAdmins = exports.updateAdmin = exports.getAdminHandler = void 0;
 const admin_model_1 = __importDefault(require("../models/admin.model"));
 const appAssert_1 = __importDefault(require("../utils/appAssert"));
 const http_1 = require("../constants/http");
@@ -47,15 +47,32 @@ exports.updateAdmin = (0, catchErrors_1.default)(async (req, res) => {
     (0, appAssert_1.default)(updatedAdmin, http_1.NOT_FOUND, 'Admin not found');
     return res.status(200).json({ admin: updatedAdmin });
 });
-exports.getAllAdmin = (0, catchErrors_1.default)(async (req, res) => {
-    const admins = await admin_model_1.default.find();
-    res.status(200).json({ admins });
+exports.getAllAdmins = (0, catchErrors_1.default)(async (req, res) => {
+    const chiefAdmin = await admin_model_1.default.findOne({
+        role: 'chief_admin',
+        _id: req.userId
+    });
+    if (!chiefAdmin) {
+        return res.status(403).json({ message: 'Access denied' });
+    }
+    const admins = await admin_model_1.default.find({}).select('-password');
+    res.json(admins);
 });
 exports.deleteAdmin = (0, catchErrors_1.default)(async (req, res) => {
     const { id } = req.params;
+    const chiefAdmin = await admin_model_1.default.findOne({
+        role: 'chief_admin',
+        _id: req.userId,
+    });
+    if (!chiefAdmin) {
+        return res.status(403).json({ message: 'Access denied' });
+    }
+    if (chiefAdmin._id == req.params.id) {
+        return res.status(403).json({ message: 'Cannot delete chief admin' });
+    }
     const admin = await admin_model_1.default.findByIdAndDelete(id);
-    (0, appAssert_1.default)(admin, http_1.NOT_FOUND, 'The organisation does not exist');
-    res.status(200).json({ message: 'Organisation deleted successfully' });
+    (0, appAssert_1.default)(admin, http_1.NOT_FOUND, 'The admin does not exist');
+    res.status(200).json({ message: 'admin deleted successfully' });
 });
 exports.getAdminStats = (0, catchErrors_1.default)(async (req, res) => {
     const totalUsers = await user_model_1.default.countDocuments();

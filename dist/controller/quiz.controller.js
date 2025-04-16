@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scheduleQuiz = exports.getLeaderboardData = exports.getLiveQuiz = exports.goLive = exports.submitQuiz = exports.deleteQuiz = exports.updateQuiz = exports.createQuiz = exports.getCompletedQuizzes = exports.isQuizCompleted = exports.getAllQuizzes = exports.getQuiz = void 0;
+exports.scheduleQuiz = exports.getLeaderboardData = exports.getLiveQuiz = exports.getScheduledQuiz = exports.goLive = exports.submitQuiz = exports.deleteQuiz = exports.updateQuiz = exports.createQuiz = exports.getCompletedQuizzes = exports.isQuizCompleted = exports.getAllQuizzes = exports.getLatestQuiz = exports.getQuiz = void 0;
 const quiz_model_1 = __importDefault(require("../models/quiz.model"));
 const cloudinary_1 = require("cloudinary");
 const quiz_schema_1 = require("./quiz.schema");
@@ -15,12 +15,48 @@ const user_model_1 = __importDefault(require("../models/user.model"));
 const sendMail_1 = require("../utils/sendMail");
 const quiz_model_2 = __importDefault(require("../models/quiz.model"));
 const emailTemplates_1 = require("../utils/emailTemplates");
+const notification_model_1 = require("../models/notification.model");
 // Get single quiz
 exports.getQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const { id } = req.params;
     const quiz = await quiz_model_1.default.findById(id);
     (0, appAssert_1.default)(quiz, 404, 'Quiz not found');
     return res.json(quiz);
+});
+exports.getLatestQuiz = (0, catchErrors_1.default)(async (req, res) => {
+    const [latestQuiz] = await completedQuiz_1.default.find()
+        .sort({ completedAt: -1 })
+        .limit(1);
+    if (!latestQuiz) {
+        return res.status(404).json({ message: 'No completed quizzes found.' });
+    }
+    const quiz = await quiz_model_1.default.findById(latestQuiz.quizId);
+    const quizId = latestQuiz.quizId;
+    const participants = await completedQuiz_1.default.find({ quizId })
+        .sort({ score: -1 })
+        .populate('userId', 'firstName lastName email imageInfo')
+        .populate('quizId', 'title');
+    const leaderboard = participants.map((p) => {
+        const user = p.userId;
+        return {
+            id: p._id,
+            userId: user._id,
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            score: p.score,
+            rewarded: p.rewarded ?? false,
+            imageUrl: user.imageInfo.imageUrl
+        };
+    });
+    const totalParticipants = participants.length;
+    const quizTitle = quiz?.title || 'Sample Quiz';
+    res.json({
+        quizId,
+        quizTitle,
+        leaderboard,
+        totalParticipants,
+        paymentsDistributed: latestQuiz.paymentsDistributed,
+    });
 });
 // Get all quizzes
 exports.getAllQuizzes = (0, catchErrors_1.default)(async (req, res) => {
@@ -256,8 +292,14 @@ exports.goLive = (0, catchErrors_1.default)(async (req, res) => {
     }, quiz.duration * 60 * 1000); // Auto-close after duration
     return res.json({ message: 'Quiz is live!' });
 });
+exports.getScheduledQuiz = (0, catchErrors_1.default)(async (req, res) => {
+    const scheduledQuiz = await quiz_model_1.default.findOne({ status: 'scheduled' });
+    if (!scheduledQuiz)
+        return res.status(400).json({ message: 'No scheduled quiz' });
+    return res.json(scheduledQuiz);
+});
 exports.getLiveQuiz = (0, catchErrors_1.default)(async (req, res) => {
-    const liveQuiz = await quiz_model_1.default.findOne({ status: 'scheduled' });
+    const liveQuiz = await quiz_model_1.default.findOne({ status: 'live' });
     if (!liveQuiz)
         return res.status(400).json({ message: 'No live quiz' });
     return res.json(liveQuiz);
@@ -307,13 +349,23 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const { hours } = req.body;
     (0, appAssert_1.default)(quizId, 400, 'Quiz ID is required');
     (0, appAssert_1.default)(hours, 400, 'Hours until start is required');
+    const currentLive = await quiz_model_1.default.findOne({ status: 'scheduled' });
+    const currentScheduled = await quiz_model_1.default.findOne({ status: 'live' });
+    if (currentLive || currentScheduled) {
+        return res.status(400).json({ message: 'A quiz is already scheduled or live' });
+    }
     const quiz = await quiz_model_1.default.findById(quizId);
     (0, appAssert_1.default)(quiz, 404, 'Quiz not found');
     quiz.status = 'scheduled';
     //Assuming 'hours' is the number of hours you want to add
-    const nigeriaOffset = 1; // Nigeria is UTC +1
-    quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000 + nigeriaOffset * 60 * 60 * 1000);
+    quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000);
     await quiz.save();
+    const notification = new notification_model_1.Notification({
+        type: 'update',
+        title: 'A new quiz is scheduled!',
+        message: 'A new quiz will go live soon, you must have a Payment profile to receive payments, go to the Payment Profile section to create one',
+    });
+    await notification.save();
     const users = await user_model_1.default.find({});
     const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`;
     //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`

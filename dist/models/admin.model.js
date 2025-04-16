@@ -9,6 +9,11 @@ const AdminSchema = new mongoose_1.default.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    role: {
+        type: String,
+        enum: ['chief_admin', 'platform_admin'],
+        default: 'platform_admin',
+    },
     imageInfo: {
         imageUrl: { type: String, default: '' },
         imageId: { type: String, default: '' },
