@@ -1,5 +1,6 @@
 
 import { Notification } from '../models/notification.model'
+import UserModel from '../models/user.model'
 import catchErrors from '../utils/catchErrors'
 
 
@@ -8,7 +9,7 @@ export const getNotifications = catchErrors(async (req, res) => {
   const { userId } = req.params
 
   // Get the user's creation date
-  const user = await User.findById(userId).select('createdAt')
+  const user = await UserModel.findById(userId).select('createdAt')
   if (!user) return res.status(404).json({ message: 'User not found' })
 
   const notifications = await Notification.find({
