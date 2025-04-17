@@ -17,4 +17,4 @@ const earningSchema = new Schema<IEarning>(
   { timestamps: true }
 )
 
-export const Earning = model<IEarning>('Earning', earningSchema)
+export const Earning = model<IEarning>('UserEarning', earningSchema)

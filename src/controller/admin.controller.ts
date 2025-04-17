@@ -6,6 +6,7 @@ import cloudinary from 'cloudinary'
 import { hashValue } from '../utils/bcrypt'
 import UserModel from '../models/user.model'
 import QuizModel from '../models/quiz.model'
+import Payment from '../models/payment.model'
 
 export const getAdminHandler = catchErrors(async (req, res) => {
   const admin = await AdminModel.findById(req.userId)
@@ -127,7 +128,18 @@ export const getAdminStats = catchErrors(async (req, res) => {
       count: entry.count
     }))
 
+      const total = await Payment.aggregate([
+        { $match: { status: 'success' } },
+        { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+      ])
+
+      console.log('total: ', total)
+
+      const totalEarnings = total[0]?.totalAmount || 0
+      console.log('earnings: ', totalEarnings)
+
     res.json({
+      totalEarnings,
       totalUsers,
       newUsersThisMonth,
       totalQuizzes,

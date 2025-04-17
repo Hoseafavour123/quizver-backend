@@ -4,19 +4,18 @@ import UserModel from '../models/user.model'
 import catchErrors from '../utils/catchErrors'
 
 
-// Get all notifications for logged-in user
 export const getNotifications = catchErrors(async (req, res) => {
   const { userId } = req.params
 
-  // Get the user's creation date
+ 
   const user = await UserModel.findById(userId).select('createdAt')
   if (!user) return res.status(404).json({ message: 'User not found' })
 
   const notifications = await Notification.find({
-    createdAt: { $gt: user.createdAt }, // only get newer notifications
+    createdAt: { $gt: user.createdAt },
     $or: [
-      { userId: userId }, // personal notifications
-      { userId: { $exists: false } }, // general notifications
+      { userId: userId }, 
+      { userId: { $exists: false } }, 
     ],
   })
     .sort({ createdAt: -1 })

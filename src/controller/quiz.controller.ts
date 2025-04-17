@@ -12,7 +12,7 @@ import QuizModel from '../models/quiz.model'
 import { getNewQuizNotificationTemplate, getQuizNowLiveTemplate } from '../utils/emailTemplates'
 import { Notification } from '../models/notification.model'
 
-// Get single quiz
+
 export const getQuiz = catchErrors(async (req, res) => {
   const { id } = req.params
   const quiz = await Quiz.findById(id)
@@ -76,7 +76,7 @@ export const getLatestQuiz = catchErrors(async (req, res) => {
   })
 })
 
-// Get all quizzes
+
 export const getAllQuizzes = catchErrors(async (req, res) => {
   const page = parseInt(req.query.page as string) || 1
   const limit = 5
@@ -135,7 +135,6 @@ export const getCompletedQuizzes = catchErrors(async (req, res) => {
   const limit = 10
   const skip = (page - 1) * limit
   
-  // Fetch completed quizzes for the user with pagination and sort by latest
   const quizzes = await CompletedQuiz.find({ userId: req.userId })
     .populate('quizId')
     .sort({ createdAt: -1 })
@@ -144,11 +143,10 @@ export const getCompletedQuizzes = catchErrors(async (req, res) => {
 
   appAssert(quizzes.length > 0, 404, 'No quizzes found')
 
-  // Return paginated quizzes
   return res.json({ quizzes, currentPage: page })
 })
 
-// Create a Quiz
+
 export const createQuiz = catchErrors(async (req, res) => {
   const parsedData = quizSchema.safeParse(req.body)
   if (!parsedData.success) {
@@ -212,7 +210,7 @@ export const createQuiz = catchErrors(async (req, res) => {
   res.status(201).json({ message: 'Quiz created successfully!' })
 })
 
-// Update a Quiz
+
 export const updateQuiz = catchErrors(async (req, res) => {
   const { id } = req.params
   const parsedData = quizSchema.safeParse(req.body)
@@ -316,7 +314,7 @@ export const updateQuiz = catchErrors(async (req, res) => {
   return res.status(200).json({ message: 'Quiz updated successfully!' })
 })
 
-// Delete a quiz with Cloudinary cleanup
+
 export const deleteQuiz = catchErrors(async (req, res) => {
   const { id } = req.params
   const quiz = await Quiz.findById(id)
@@ -478,7 +476,7 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   appAssert(quiz, 404, 'Quiz not found')
 
   quiz.status = 'scheduled'
-  //Assuming 'hours' is the number of hours you want to add
+ 
   quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000)
   await quiz.save()
 
@@ -497,7 +495,7 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
 
 
-  // Use Promise.all to handle asynchronous email sending
+
   await Promise.all(
     users.map((user) =>
       sendMail({

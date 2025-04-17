@@ -12,7 +12,7 @@ import appAssert from '../utils/appAssert'
 import CompletedQuiz from '../models/completedQuiz'
 import { Earning } from '../models/earnings.model'
 
-// Initialize PaymentService instance
+
 const paymentInstance = new PaymentService()
 
 export const getBanks = async (req: Request, res: Response): Promise<void> => {
