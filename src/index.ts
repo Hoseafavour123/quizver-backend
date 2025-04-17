@@ -51,6 +51,10 @@ cloudinary.v2.config({
 
 app.use(morgan('dev'))
 
+app.get('/api/server-time', (req, res) => {
+  res.json({ serverTime: Date.now() }) // returns accurate UTC time
+})
+
 app.use('/auth', authUserRoutes)
 app.use('/auth/admin', authAdminRoutes)
 
