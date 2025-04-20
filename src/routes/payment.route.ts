@@ -1,8 +1,10 @@
 import express from 'express';
-import { startPayment, createPayment, getPayment, notifyUsersForPayment, isQuizPaidFor, getBanks, createTransferRecipient, initiateTransfer, verifyTransfer } from '../controller/payment.controller';
+import { startPayment, createPayment, getPayment, notifyUsersForPayment, isQuizPaidFor, getBanks, createTransferRecipient, initiateTransfer, verifyTransfer, sendPaymentNotification } from '../controller/payment.controller';
 
 const router = express.Router();
 
+
+router.get('/send-payment-notification', sendPaymentNotification)
 router.get('/banks', getBanks)
 router.post('/create-recipient', createTransferRecipient)
 router.post('/initiate-transfer', initiateTransfer)

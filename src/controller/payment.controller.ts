@@ -12,7 +12,6 @@ import appAssert from '../utils/appAssert'
 import CompletedQuiz from '../models/completedQuiz'
 import { Earning } from '../models/earnings.model'
 
-
 const paymentInstance = new PaymentService()
 
 export const getBanks = async (req: Request, res: Response): Promise<void> => {
@@ -32,10 +31,10 @@ export const getBanks = async (req: Request, res: Response): Promise<void> => {
 
 export const createTransferRecipient = catchErrors(async (req, res) => {
   const { email } = req.body
-  const {userId} = req.query
+  const { userId } = req.query
   console.log(email)
 
-  const userPaymentProfile = await PaymentProfile.findOne({userId})
+  const userPaymentProfile = await PaymentProfile.findOne({ userId })
   if (!userPaymentProfile) {
     return res.status(404).json({ message: 'Payment profile not found' })
   }
@@ -52,7 +51,6 @@ export const createTransferRecipient = catchErrors(async (req, res) => {
   return res.json({ recipient: recipient.data })
 })
 
-
 export const initiateTransfer = catchErrors(async (req, res) => {
   const { amount, recipientCode, email, userId } = req.body
   const quizId = req.query.quizId
@@ -63,22 +61,20 @@ export const initiateTransfer = catchErrors(async (req, res) => {
     email,
   }
 
-   const completedQuiz = await CompletedQuiz.findOne({
+  const completedQuiz = await CompletedQuiz.findOne({
     quizId,
     userId,
-   })
+  })
 
-   appAssert(completedQuiz, 404, 'Quiz result not found for user')
+  appAssert(completedQuiz, 404, 'Quiz result not found for user')
 
+  if (!completedQuiz) {
+    return res.status(404).json({ message: 'Quiz result not found for user' })
+  }
 
-   if (!completedQuiz) {
-     return res.status(404).json({ message: 'Quiz result not found for user' })
-   }
-
-
-   if (completedQuiz.rewarded) {
-     return res.status(400).json({ message: 'User has already been rewarded' })
-   }
+  if (completedQuiz.rewarded) {
+    return res.status(400).json({ message: 'User has already been rewarded' })
+  }
 
   const transfer = await paymentInstance.initiateTransfer(data)
 
@@ -87,22 +83,22 @@ export const initiateTransfer = catchErrors(async (req, res) => {
   const earning = new Earning({
     userId,
     quizId,
-    amount
+    amount,
   })
 
   await earning.save()
 
   const notification = new Notification({
     userId,
-    type:'payment',
+    type: 'payment',
     title: 'Congratulations! Payment Sent!',
-    message: `You just received a payment of N${amount} for being a top scorer in the recnt quiz`
+    message: `You just received a payment of N${amount} for being a top scorer in the recnt quiz`,
   })
 
   await notification.save()
-  
+
   completedQuiz.rewarded = true
-  
+
   await completedQuiz.save()
 
   return res.json({ transfer })
@@ -121,11 +117,12 @@ export const savePaymentprofile = async (req: Request, res: Response) => {
     const { name, accountNumber, bank } = req.body
     const bankInfo = JSON.parse(bank)
 
-    const exisitingProfile = await PaymentProfile.findOne({ userId: req.userId })
+    const exisitingProfile = await PaymentProfile.findOne({
+      userId: req.userId,
+    })
 
     if (exisitingProfile) {
       await PaymentProfile.deleteOne({ userId: req.userId })
-
     }
 
     const profile = new PaymentProfile({
@@ -138,7 +135,7 @@ export const savePaymentprofile = async (req: Request, res: Response) => {
 
     await profile.save()
 
-    res.status(201).json({profile})
+    res.status(201).json({ profile })
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: 'Failed to save profile' })
@@ -150,7 +147,63 @@ export const getPaymentProfile = catchErrors(async (req, res) => {
   if (profile) {
     return res.status(200).json(profile)
   }
-  return res.status(400).json({ messaage: 'No profile found'})
+  return res.status(400).json({ messaage: 'No profile found' })
+})
+
+export const getPaymentProfileAdmin = catchErrors(async (req, res) => {
+  const profile = await PaymentProfile.findOne({ userId: req.query.userId })
+  if (profile) {
+    return res.status(200).json(profile)
+  }
+  return res.status(400).json({ messaage: 'No profile found' })
+})
+
+export const sendPaymentNotification = catchErrors(async (req, res) => {
+  const quizId = req.query.quizId
+  const amount = req.query.amount
+  const userId = req.query.userId
+
+  appAssert(quizId, 400, 'Quiz ID is required')
+  appAssert(userId, 400, 'User ID is required')
+  appAssert(amount, 400, 'Amount is required')
+
+  const completedQuiz = await CompletedQuiz.findOne({
+    quizId,
+    userId,
+  })
+
+  appAssert(completedQuiz, 404, 'Quiz result not found for user')
+
+  if (!completedQuiz) {
+    return res.status(404).json({ message: 'Quiz result not found for user' })
+  }
+
+  if (completedQuiz.rewarded) {
+    return res.status(400).json({ message: 'User has already been rewarded' })
+  }
+
+  const earning = new Earning({
+    userId,
+    quizId,
+    amount,
+  })
+
+  await earning.save()
+
+  const notification = new Notification({
+    userId,
+    type: 'payment',
+    title: 'Congratulations! Payment notification!',
+    message: `You just received a payment of N${amount} for being a top scorer in the recent quiz`,
+  })
+
+  await notification.save()
+
+  completedQuiz.rewarded = true
+
+  await completedQuiz.save()
+
+  return res.status(200).json({ message: 'Notification sent' })
 })
 
 export const startPayment = async (
