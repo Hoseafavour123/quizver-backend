@@ -28,7 +28,7 @@ const errorHandler: ErrorRequestHandler = (err, req: Request, res: Response, nex
     console.log(`PATH ${req.path}`, err);
 
     if (req.path === REFRESH_PATH) {
-        clearAuthCookies(res)
+        clearAuthCookies(res, REFRESH_PATH)
     }
     if (err instanceof z.ZodError) {
         handleZodError(res, err);
