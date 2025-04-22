@@ -26,7 +26,7 @@ const handleAppError = (res, err) => {
 const errorHandler = (err, req, res, next) => {
     console.log(`PATH ${req.path}`, err);
     if (req.path === cookies_1.REFRESH_PATH) {
-        (0, cookies_1.clearAuthCookies)(res);
+        (0, cookies_1.clearAuthCookies)(res, cookies_1.REFRESH_PATH);
     }
     if (err instanceof zod_1.z.ZodError) {
         handleZodError(res, err);
