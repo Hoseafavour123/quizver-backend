@@ -19,7 +19,7 @@ exports.registerHandler = (0, catchErrors_1.default)(async (req, res) => {
         userAgent: req.headers['user-agent'],
     });
     const { admin, accessToken, refreshToken } = await (0, authAdmin_service_1.createAccount)(request);
-    return (0, cookies_1.setAuthCookies)({ res, accessToken, refreshToken })
+    return (0, cookies_1.setAuthCookies)({ res, accessToken, refreshToken, refreshPath: '/auth/admin/refresh' })
         .status(http_1.CREATED)
         .json(admin);
 });
@@ -29,19 +29,29 @@ exports.loginHandler = (0, catchErrors_1.default)(async (req, res) => {
         userAgent: req.headers['user-agent'],
     });
     const { accessToken, refreshToken } = await (0, authAdmin_service_1.loginUser)(request);
-    return (0, cookies_1.setAuthCookies)({ res, accessToken, refreshToken })
+    return (0, cookies_1.setAuthCookies)({ res, accessToken, refreshToken, refreshPath: '/auth/admin/refresh' })
         .status(http_1.OK)
         .json({ message: 'login successfull' });
 });
+// export const logoutHandler = catchErrors(async (req, res) => {
+//   const accessToken = req.cookies.accessToken
+//   const { payload } = verifyToken(accessToken)
+//   if (payload) {
+//     await SessionModel.findByIdAndDelete(payload.sessionId)
+//   }
+//   return clearAuthCookies(res)
+//     .status(OK)
+//     .json({ message: 'logout successfull' })
+// })
 exports.logoutHandler = (0, catchErrors_1.default)(async (req, res) => {
     const accessToken = req.cookies.accessToken;
     const { payload } = (0, jwt_1.verifyToken)(accessToken);
     if (payload) {
         await session_model_1.default.findByIdAndDelete(payload.sessionId);
     }
-    return (0, cookies_1.clearAuthCookies)(res)
+    return (0, cookies_1.clearAuthCookies)(res, '/auth/admin/refresh')
         .status(http_1.OK)
-        .json({ message: 'logout successfull' });
+        .json({ message: 'Admin logout successful' });
 });
 exports.refreshHandler = (0, catchErrors_1.default)(async (req, res) => {
     const refreshToken = req.cookies.refreshToken || undefined;
@@ -85,7 +95,7 @@ exports.resetPasswordHandler = (0, catchErrors_1.default)(async (req, res) => {
     })
         .parse(req.body);
     await (0, authAdmin_service_1.resetPassword)(code, password);
-    await (0, cookies_1.clearAuthCookies)(res)
+    await (0, cookies_1.clearAuthCookies)(res, '/auth/admin/refresh')
         .status(http_1.OK)
         .json({ message: 'Password was successfully reset' });
 });

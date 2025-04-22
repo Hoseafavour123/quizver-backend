@@ -4,6 +4,7 @@ const express_1 = require("express");
 const quiz_controller_1 = require("../controller/quiz.controller");
 const uploadMiddleware_1 = require("../middleware/uploadMiddleware");
 const router = (0, express_1.Router)();
+router.get('/completed-quiz-answers/:quizId', quiz_controller_1.getCompletedQuizzesAnswers);
 router.get('/latest-leaderboard', quiz_controller_1.getLatestQuiz);
 router.get('/check-completed/:id', quiz_controller_1.isQuizCompleted);
 router.get('/get-live-quiz', quiz_controller_1.getLiveQuiz);

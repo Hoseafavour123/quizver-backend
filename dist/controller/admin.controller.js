@@ -12,6 +12,7 @@ const cloudinary_1 = __importDefault(require("cloudinary"));
 const bcrypt_1 = require("../utils/bcrypt");
 const user_model_1 = __importDefault(require("../models/user.model"));
 const quiz_model_1 = __importDefault(require("../models/quiz.model"));
+const payment_model_1 = __importDefault(require("../models/payment.model"));
 exports.getAdminHandler = (0, catchErrors_1.default)(async (req, res) => {
     const admin = await admin_model_1.default.findById(req.userId);
     (0, appAssert_1.default)(admin, http_1.NOT_FOUND, 'Organisation not found');
@@ -101,7 +102,15 @@ exports.getAdminStats = (0, catchErrors_1.default)(async (req, res) => {
         month: entry._id,
         count: entry.count
     }));
+    const total = await payment_model_1.default.aggregate([
+        { $match: { status: 'success' } },
+        { $group: { _id: null, totalAmount: { $sum: '$amount' } } },
+    ]);
+    console.log('total: ', total);
+    const totalEarnings = total[0]?.totalAmount || 0;
+    console.log('earnings: ', totalEarnings);
     res.json({
+        totalEarnings,
         totalUsers,
         newUsersThisMonth,
         totalQuizzes,

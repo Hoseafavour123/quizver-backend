@@ -44,6 +44,9 @@ cloudinary_1.default.v2.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 app.use((0, morgan_1.default)('dev'));
+app.get('/api/server-time', (req, res) => {
+    res.json({ serverTime: Date.now() }); // returns accurate UTC time
+});
 app.use('/auth', authUser_route_1.default);
 app.use('/auth/admin', authAdmin_route_1.default);
 app.use('/user', authenticate_1.default, user_route_1.default);

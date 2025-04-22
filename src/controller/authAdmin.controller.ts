@@ -28,7 +28,7 @@ export const registerHandler = catchErrors(async (req, res) => {
 
   const { admin, accessToken, refreshToken } = await createAccount(request)
 
-  return setAuthCookies({ res, accessToken, refreshToken })
+  return setAuthCookies({ res, accessToken, refreshToken, refreshPath: '/auth/admin/refresh' })
     .status(CREATED)
     .json(admin)
 })
@@ -41,21 +41,37 @@ export const loginHandler = catchErrors(async (req, res) => {
 
   const {  accessToken, refreshToken } = await loginUser(request)
 
-  return setAuthCookies({ res, accessToken, refreshToken })
+  return setAuthCookies({ res, accessToken, refreshToken, refreshPath: '/auth/admin/refresh' })
     .status(OK)
     .json({ message: 'login successfull' })
 })
 
+// export const logoutHandler = catchErrors(async (req, res) => {
+//   const accessToken = req.cookies.accessToken
+//   const { payload } = verifyToken(accessToken)
+//   if (payload) {
+//     await SessionModel.findByIdAndDelete(payload.sessionId)
+//   }
+//   return clearAuthCookies(res)
+//     .status(OK)
+//     .json({ message: 'logout successfull' })
+// })
+
 export const logoutHandler = catchErrors(async (req, res) => {
   const accessToken = req.cookies.accessToken
   const { payload } = verifyToken(accessToken)
+
   if (payload) {
     await SessionModel.findByIdAndDelete(payload.sessionId)
   }
-  return clearAuthCookies(res)
+
+  return clearAuthCookies(res, '/auth/admin/refresh')
     .status(OK)
-    .json({ message: 'logout successfull' })
+    .json({ message: 'Admin logout successful' })
 })
+
+
+
 
 export const refreshHandler = catchErrors(async (req, res) => {
   const refreshToken = (req.cookies.refreshToken as string) || undefined
@@ -113,7 +129,7 @@ export const resetPasswordHandler = catchErrors(async (req, res) => {
 
   await resetPassword(code, password)
 
-  await clearAuthCookies(res)
+  await clearAuthCookies(res, '/auth/admin/refresh')
     .status(OK)
     .json({ message: 'Password was successfully reset' })
 })

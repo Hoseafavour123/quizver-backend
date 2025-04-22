@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isQuizPaidFor = exports.notifyUsersForPayment = exports.getPayment = exports.createPayment = exports.startPayment = exports.getPaymentProfile = exports.savePaymentprofile = exports.verifyTransfer = exports.initiateTransfer = exports.createTransferRecipient = exports.getBanks = void 0;
+exports.isQuizPaidFor = exports.notifyUsersForPayment = exports.getPayment = exports.createPayment = exports.startPayment = exports.sendPaymentNotification = exports.getPaymentProfileAdmin = exports.getPaymentProfile = exports.savePaymentprofile = exports.verifyTransfer = exports.initiateTransfer = exports.createTransferRecipient = exports.getBanks = void 0;
 const payment_service_1 = __importDefault(require("../services/payment.service"));
 const catchErrors_1 = __importDefault(require("../utils/catchErrors"));
 const user_model_1 = __importDefault(require("../models/user.model"));
@@ -16,7 +16,6 @@ const emailTemplates_1 = require("../utils/emailTemplates");
 const appAssert_1 = __importDefault(require("../utils/appAssert"));
 const completedQuiz_1 = __importDefault(require("../models/completedQuiz"));
 const earnings_model_1 = require("../models/earnings.model");
-// Initialize PaymentService instance
 const paymentInstance = new payment_service_1.default();
 const getBanks = async (req, res) => {
     try {
@@ -40,7 +39,6 @@ exports.createTransferRecipient = (0, catchErrors_1.default)(async (req, res) =>
     if (!userPaymentProfile) {
         return res.status(404).json({ message: 'Payment profile not found' });
     }
-    (0, appAssert_1.default)(userPaymentProfile, 404, 'Payment profile not found');
     const data = {
         accountNumber: userPaymentProfile.accountNumber,
         bankCode: userPaymentProfile.bankCode,
@@ -76,14 +74,14 @@ exports.initiateTransfer = (0, catchErrors_1.default)(async (req, res) => {
     const earning = new earnings_model_1.Earning({
         userId,
         quizId,
-        amount
+        amount,
     });
     await earning.save();
     const notification = new notification_model_1.Notification({
         userId,
         type: 'payment',
         title: 'Congratulations! Payment Sent!',
-        message: `You just received a payment of N${amount} for being a top scorer in the recnt quiz`
+        message: `You just received a payment of N${amount} for being a top scorer in the recnt quiz`,
     });
     await notification.save();
     completedQuiz.rewarded = true;
@@ -99,7 +97,9 @@ const savePaymentprofile = async (req, res) => {
     try {
         const { name, accountNumber, bank } = req.body;
         const bankInfo = JSON.parse(bank);
-        const exisitingProfile = await paymentProfile_model_1.default.findOne({ userId: req.userId });
+        const exisitingProfile = await paymentProfile_model_1.default.findOne({
+            userId: req.userId,
+        });
         if (exisitingProfile) {
             await paymentProfile_model_1.default.deleteOne({ userId: req.userId });
         }
@@ -125,6 +125,48 @@ exports.getPaymentProfile = (0, catchErrors_1.default)(async (req, res) => {
         return res.status(200).json(profile);
     }
     return res.status(400).json({ messaage: 'No profile found' });
+});
+exports.getPaymentProfileAdmin = (0, catchErrors_1.default)(async (req, res) => {
+    const profile = await paymentProfile_model_1.default.findOne({ userId: req.query.userId });
+    if (profile) {
+        return res.status(200).json(profile);
+    }
+    return res.status(400).json({ messaage: 'No profile found' });
+});
+exports.sendPaymentNotification = (0, catchErrors_1.default)(async (req, res) => {
+    const quizId = req.query.quizId;
+    const amount = req.query.amount;
+    const userId = req.query.userId;
+    (0, appAssert_1.default)(quizId, 400, 'Quiz ID is required');
+    (0, appAssert_1.default)(userId, 400, 'User ID is required');
+    (0, appAssert_1.default)(amount, 400, 'Amount is required');
+    const completedQuiz = await completedQuiz_1.default.findOne({
+        quizId,
+        userId,
+    });
+    (0, appAssert_1.default)(completedQuiz, 404, 'Quiz result not found for user');
+    if (!completedQuiz) {
+        return res.status(404).json({ message: 'Quiz result not found for user' });
+    }
+    if (completedQuiz.rewarded) {
+        return res.status(400).json({ message: 'User has already been rewarded' });
+    }
+    const earning = new earnings_model_1.Earning({
+        userId,
+        quizId,
+        amount,
+    });
+    await earning.save();
+    const notification = new notification_model_1.Notification({
+        userId,
+        type: 'payment',
+        title: 'Congratulations! Payment notification!',
+        message: `You just received a payment of N${amount} for being a top scorer in the recent quiz`,
+    });
+    await notification.save();
+    completedQuiz.rewarded = true;
+    await completedQuiz.save();
+    return res.status(200).json({ message: 'Notification sent' });
 });
 const startPayment = async (req, res) => {
     console.log(req.body, req.params.quizId, req.userId);

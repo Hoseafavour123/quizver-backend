@@ -77,6 +77,8 @@ export const createAccount = async (data: CreateAccountParams) => {
     userId,
     sessionId: session._id,
   })
+
+  
   return {
     admin: admin.omitPassword(),
     accessToken,

@@ -13,17 +13,26 @@ const getAccessTokenCookieOptions = () => ({
     expires: (0, date_1.fifteenMinutesFromNow)(),
 });
 exports.getAccessTokenCookieOptions = getAccessTokenCookieOptions;
-const getRefreshTokenCookieOptions = () => ({
+// export const getRefreshTokenCookieOptions = (): CookieOptions => ({
+//   ...defaults,
+//   expires: thirtyDaysFromNow(),
+//   path: REFRESH_PATH,
+// })
+const getRefreshTokenCookieOptions = (path = exports.REFRESH_PATH) => ({
     ...defaults,
     expires: (0, date_1.thirtyDaysFromNow)(),
-    path: exports.REFRESH_PATH,
+    path,
 });
 exports.getRefreshTokenCookieOptions = getRefreshTokenCookieOptions;
-const setAuthCookies = ({ res, accessToken, refreshToken }) => res
+const setAuthCookies = ({ res, accessToken, refreshToken, refreshPath = exports.REFRESH_PATH, }) => res
     .cookie('accessToken', accessToken, (0, exports.getAccessTokenCookieOptions)())
-    .cookie('refreshToken', refreshToken, (0, exports.getRefreshTokenCookieOptions)());
+    .cookie('refreshToken', refreshToken, (0, exports.getRefreshTokenCookieOptions)(refreshPath));
 exports.setAuthCookies = setAuthCookies;
-const clearAuthCookies = (res) => res
+// export const setAuthCookies = ({ res, accessToken, refreshToken }: Params) =>
+//   res
+//     .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
+//     .cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions())
+const clearAuthCookies = (res, refreshPath) => res
     .clearCookie('accessToken')
-    .clearCookie('refreshToken', { path: exports.REFRESH_PATH });
+    .clearCookie('refreshToken', { path: refreshPath });
 exports.clearAuthCookies = clearAuthCookies;

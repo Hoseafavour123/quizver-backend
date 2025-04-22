@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const payment_controller_1 = require("../controller/payment.controller");
 const router = express_1.default.Router();
+router.get('/send-payment-notification', payment_controller_1.sendPaymentNotification);
 router.get('/banks', payment_controller_1.getBanks);
 router.post('/create-recipient', payment_controller_1.createTransferRecipient);
 router.post('/initiate-transfer', payment_controller_1.initiateTransfer);

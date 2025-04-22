@@ -5,16 +5,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.markAsRead = exports.getNotifications = void 0;
 const notification_model_1 = require("../models/notification.model");
+const user_model_1 = __importDefault(require("../models/user.model"));
 const catchErrors_1 = __importDefault(require("../utils/catchErrors"));
-// Get all notifications for logged-in user
 exports.getNotifications = (0, catchErrors_1.default)(async (req, res) => {
     const { userId } = req.params;
+    const user = await user_model_1.default.findById(userId).select('createdAt');
+    if (!user)
+        return res.status(404).json({ message: 'User not found' });
     const notifications = await notification_model_1.Notification.find({
+        createdAt: { $gt: user.createdAt },
         $or: [
-            { userId: userId }, // personal notifications
-            { userId: { $exists: false } }, // general notifications
+            { userId: userId },
+            { userId: { $exists: false } },
         ],
-    }).sort({ createdAt: -1 }).lean();
+    })
+        .sort({ createdAt: -1 })
+        .lean();
     res.json(notifications);
 });
 exports.markAsRead = (0, catchErrors_1.default)(async (req, res) => {

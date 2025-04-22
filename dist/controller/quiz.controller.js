@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scheduleQuiz = exports.getLeaderboardData = exports.getLiveQuiz = exports.getScheduledQuiz = exports.goLive = exports.submitQuiz = exports.deleteQuiz = exports.updateQuiz = exports.createQuiz = exports.getCompletedQuizzes = exports.isQuizCompleted = exports.getAllQuizzes = exports.getLatestQuiz = exports.getQuiz = void 0;
+exports.scheduleQuiz = exports.getLeaderboardData = exports.getLiveQuiz = exports.getScheduledQuiz = exports.goLive = exports.submitQuiz = exports.deleteQuiz = exports.updateQuiz = exports.createQuiz = exports.getCompletedQuizzes = exports.getCompletedQuizzesAnswers = exports.isQuizCompleted = exports.getAllQuizzes = exports.getLatestQuiz = exports.getQuiz = void 0;
 const quiz_model_1 = __importDefault(require("../models/quiz.model"));
 const cloudinary_1 = require("cloudinary");
 const quiz_schema_1 = require("./quiz.schema");
@@ -16,7 +16,6 @@ const sendMail_1 = require("../utils/sendMail");
 const quiz_model_2 = __importDefault(require("../models/quiz.model"));
 const emailTemplates_1 = require("../utils/emailTemplates");
 const notification_model_1 = require("../models/notification.model");
-// Get single quiz
 exports.getQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const { id } = req.params;
     const quiz = await quiz_model_1.default.findById(id);
@@ -58,7 +57,6 @@ exports.getLatestQuiz = (0, catchErrors_1.default)(async (req, res) => {
         paymentsDistributed: latestQuiz.paymentsDistributed,
     });
 });
-// Get all quizzes
 exports.getAllQuizzes = (0, catchErrors_1.default)(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 5;
@@ -82,21 +80,34 @@ exports.isQuizCompleted = (0, catchErrors_1.default)(async (req, res) => {
     }
     return res.json({ isCompleted: true });
 });
+exports.getCompletedQuizzesAnswers = (0, catchErrors_1.default)(async (req, res) => {
+    const completedQuiz = await completedQuiz_1.default.findOne({ _id: req.params.quizId, userId: req.userId });
+    (0, appAssert_1.default)(completedQuiz, 404, 'Completed quiz not found');
+    if (!completedQuiz)
+        return res.status(404).json({ error: 'Completed quiz not found' });
+    const quiz = await quiz_model_1.default.findById(completedQuiz.quizId);
+    if (!quiz)
+        return res.status(404).json({ error: 'Quiz not found' });
+    return res.json({
+        completedQuiz,
+        quiz: {
+            title: quiz.title,
+            questions: quiz.questions,
+        },
+    });
+});
 exports.getCompletedQuizzes = (0, catchErrors_1.default)(async (req, res) => {
     const page = parseInt(req.query.page || '1');
     const limit = 10;
     const skip = (page - 1) * limit;
-    // Fetch completed quizzes for the user with pagination and sort by latest
     const quizzes = await completedQuiz_1.default.find({ userId: req.userId })
         .populate('quizId')
-        .sort({ createdAt: -1 }) // Sort by latest quizzes first
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
     (0, appAssert_1.default)(quizzes.length > 0, 404, 'No quizzes found');
-    // Return paginated quizzes
     return res.json({ quizzes, currentPage: page });
 });
-// Create a Quiz
 exports.createQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const parsedData = quiz_schema_1.quizSchema.safeParse(req.body);
     if (!parsedData.success) {
@@ -147,7 +158,6 @@ exports.createQuiz = (0, catchErrors_1.default)(async (req, res) => {
     await newQuiz.save();
     res.status(201).json({ message: 'Quiz created successfully!' });
 });
-// Update a Quiz
 exports.updateQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const { id } = req.params;
     const parsedData = quiz_schema_1.quizSchema.safeParse(req.body);
@@ -231,7 +241,6 @@ exports.updateQuiz = (0, catchErrors_1.default)(async (req, res) => {
     });
     return res.status(200).json({ message: 'Quiz updated successfully!' });
 });
-// Delete a quiz with Cloudinary cleanup
 exports.deleteQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const { id } = req.params;
     const quiz = await quiz_model_1.default.findById(id);
@@ -357,7 +366,6 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const quiz = await quiz_model_1.default.findById(quizId);
     (0, appAssert_1.default)(quiz, 404, 'Quiz not found');
     quiz.status = 'scheduled';
-    //Assuming 'hours' is the number of hours you want to add
     quiz.scheduledAt = new Date(Date.now() + hours * 60 * 60 * 1000);
     await quiz.save();
     const notification = new notification_model_1.Notification({
@@ -369,7 +377,6 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
     const users = await user_model_1.default.find({});
     const quizPaymentUrl = `https://quizver.vercel.app/user/quiz/pay/${quizId}`;
     //const quizPaymentUrl = `http://localhost:5173/user/quiz/pay/${quizId}`
-    // Use Promise.all to handle asynchronous email sending
     await Promise.all(users.map((user) => (0, sendMail_1.sendMail)({
         email: user.email,
         ...(0, emailTemplates_1.getNewQuizNotificationTemplate)(quiz?.title || 'New Quiz', quizPaymentUrl, hours),
@@ -380,6 +387,12 @@ exports.scheduleQuiz = (0, catchErrors_1.default)(async (req, res) => {
         (0, appAssert_1.default)(updatedQuiz, 404, 'Quiz not found');
         updatedQuiz.status = 'live';
         await updatedQuiz.save();
+        const notification = new notification_model_1.Notification({
+            type: 'update',
+            title: `${updatedQuiz.title} is live!`,
+            message: "Dont miss the opportunity to earn from this quiz!",
+        });
+        await notification.save();
         //const quizUrl = `http://localhost:5173/user/live-quiz?quizId=${quizId}`;
         const quizUrl = `https://quizver.vercel.app/user/live-quiz?quizId=${quizId}`;
         await Promise.all(users.map((user) => (0, sendMail_1.sendMail)({

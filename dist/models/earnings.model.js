@@ -8,4 +8,4 @@ const earningSchema = new mongoose_1.Schema({
     amount: { type: Number, required: true },
     earnedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
-exports.Earning = (0, mongoose_1.model)('Earning', earningSchema);
+exports.Earning = (0, mongoose_1.model)('UserEarning', earningSchema);

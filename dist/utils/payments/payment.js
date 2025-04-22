@@ -7,6 +7,7 @@ exports.verifyTransfer = exports.initiateTransfer = exports.createTransferRecipi
 const axios_1 = __importDefault(require("axios"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+//const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_TEST_SECRET_KEY;
 const getBanks = async () => {
     try {

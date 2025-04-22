@@ -54,16 +54,31 @@ export const loginHandler = catchErrors(async (req, res) => {
 
 
 
+// export const logoutHandler = catchErrors(async (req, res) => {
+//   const accessToken = req.cookies.accessToken
+//   const { payload } = verifyToken(accessToken)
+//   if (payload) {
+//     await SessionModel.findByIdAndDelete(payload.sessionId)
+//   }
+//   return clearAuthCookies(res)
+//     .status(OK)
+//     .json({ message: 'logout successfull' })
+// })
+
+
 export const logoutHandler = catchErrors(async (req, res) => {
   const accessToken = req.cookies.accessToken
   const { payload } = verifyToken(accessToken)
+
   if (payload) {
     await SessionModel.findByIdAndDelete(payload.sessionId)
   }
-  return clearAuthCookies(res)
+
+  return clearAuthCookies(res, '/auth/refresh')
     .status(OK)
-    .json({ message: 'logout successfull' })
+    .json({ message: 'User logout successful' })
 })
+
 
 export const refreshHandler = catchErrors(async (req, res) => {
   const refreshToken = (req.cookies.refreshToken as string) || undefined
@@ -122,7 +137,7 @@ export const resetPasswordHandler = catchErrors(async (req, res) => {
 
   await resetPassword(code, password)
 
-  await clearAuthCookies(res)
+  await clearAuthCookies(res, '/auth/refresh')
     .status(OK)
     .json({ message: 'Password was successfully reset' })
 })

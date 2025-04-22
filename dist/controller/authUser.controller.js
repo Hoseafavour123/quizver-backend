@@ -33,15 +33,25 @@ exports.loginHandler = (0, catchErrors_1.default)(async (req, res) => {
         .status(http_1.OK)
         .json({ message: 'login successfull' });
 });
+// export const logoutHandler = catchErrors(async (req, res) => {
+//   const accessToken = req.cookies.accessToken
+//   const { payload } = verifyToken(accessToken)
+//   if (payload) {
+//     await SessionModel.findByIdAndDelete(payload.sessionId)
+//   }
+//   return clearAuthCookies(res)
+//     .status(OK)
+//     .json({ message: 'logout successfull' })
+// })
 exports.logoutHandler = (0, catchErrors_1.default)(async (req, res) => {
     const accessToken = req.cookies.accessToken;
     const { payload } = (0, jwt_1.verifyToken)(accessToken);
     if (payload) {
         await session_model_1.default.findByIdAndDelete(payload.sessionId);
     }
-    return (0, cookies_1.clearAuthCookies)(res)
+    return (0, cookies_1.clearAuthCookies)(res, '/auth/refresh')
         .status(http_1.OK)
-        .json({ message: 'logout successfull' });
+        .json({ message: 'User logout successful' });
 });
 exports.refreshHandler = (0, catchErrors_1.default)(async (req, res) => {
     const refreshToken = req.cookies.refreshToken || undefined;
@@ -86,7 +96,7 @@ exports.resetPasswordHandler = (0, catchErrors_1.default)(async (req, res) => {
     })
         .parse(req.body);
     await (0, authUser_service_1.resetPassword)(code, password);
-    await (0, cookies_1.clearAuthCookies)(res)
+    await (0, cookies_1.clearAuthCookies)(res, '/auth/refresh')
         .status(http_1.OK)
         .json({ message: 'Password was successfully reset' });
 });

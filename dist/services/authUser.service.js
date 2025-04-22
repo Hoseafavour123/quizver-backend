@@ -46,6 +46,8 @@ const createAccount = async (data) => {
         sessionId: session._id,
     });
     const notification = new notification_model_1.Notification({
+        userId,
+        type: 'welcome',
         title: `Welcome ${user.firstName}!`,
         message: "Welcome to Quizver, we're glad to have you!"
     });
