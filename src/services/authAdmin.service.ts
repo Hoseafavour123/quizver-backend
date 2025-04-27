@@ -200,7 +200,7 @@ export const sendPasswordResetEmail = async (email: string) => {
   const admin = await AdminModel.findOne({ email })
   appAssert(admin, NOT_FOUND, 'User does not exist')
 
-  const fiveMinsAgo = fiveMinutesAgo()
+  const fiveMinsAgo = fiveMinutesAgo() 
 
   const count = await VerificationCodeModel.countDocuments({
     userId: admin._id,
