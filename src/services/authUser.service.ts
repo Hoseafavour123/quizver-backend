@@ -58,6 +58,7 @@ export const createAccount = async (data: CreateAccountParams) => {
     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
   })
 
+  //const url = `${process.env.APP_ORIGIN}/email/verify/${verificationCode._id}`
   const url = `https://www.quizver.com.ng/email/verify/${verificationCode._id}`
 
   await sendMail({ email: user.email, ...getVerifyEmailTemplate(url) })

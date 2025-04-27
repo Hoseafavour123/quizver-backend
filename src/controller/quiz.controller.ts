@@ -57,6 +57,7 @@ export const getLatestQuiz = catchErrors(async (req, res) => {
       name: `${user.firstName} ${user.lastName}`,
       email: user.email,
       score: p.score,
+      completedAt: p.completedAt,
       rewarded: p.rewarded ?? false,
       imageUrl: user.imageInfo.imageUrl
     }
@@ -535,14 +536,14 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
     const quizUrl = `https://www.quizver.com.ng/user/live-quiz?quizId=${quizId}`
 
-    await Promise.all(
-      users.map((user) =>
-        sendMail({
-          email: user.email,
-          ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
-        })
-      )
-    )
+    // await Promise.all(
+    //   users.map((user) =>
+    //     sendMail({
+    //       email: user.email,
+    //       ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
+    //     })
+    //   )
+    // )
 
     const io = getSocket()
 
