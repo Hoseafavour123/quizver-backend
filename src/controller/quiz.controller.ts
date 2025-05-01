@@ -460,6 +460,8 @@ export const getLeaderboardData = catchErrors(async (req, res) => {
 })
 
 
+
+
 export const scheduleQuiz = catchErrors(async (req, res) => {
   const { quizId } = req.params
   const { hours } = req.body
@@ -467,8 +469,8 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
   appAssert(quizId, 400, 'Quiz ID is required')
   appAssert(hours, 400, 'Hours until start is required')
 
-  const currentLive = await Quiz.findOne({ status: 'scheduled'})
-  const currentScheduled = await Quiz.findOne({ status: 'live'})
+  const currentLive = await Quiz.findOne({ status: 'live'})
+  const currentScheduled = await Quiz.findOne({ status: 'scheduled'})
 
   if (currentLive || currentScheduled) {
     return res.status(400).json({ message: 'A quiz is already scheduled or live' })
@@ -498,18 +500,18 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
 
 
-  await Promise.all(
-    users.map((user) =>
-      sendMail({
-        email: user.email,
-        ...getNewQuizNotificationTemplate(
-          quiz?.title || 'New Quiz',
-          quizPaymentUrl,
-          hours
-        ),
-      })
-    )
-  )
+  // await Promise.all(
+  //   users.map((user) =>
+  //     sendMail({
+  //       email: user.email,
+  //       ...getNewQuizNotificationTemplate(
+  //         quiz?.title || 'New Quiz',
+  //         quizPaymentUrl,
+  //         hours
+  //       ),
+  //     })
+  //   )
+  // )
 
   await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
 
@@ -552,7 +554,7 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
     setTimeout(async () => {
       const liveQuiz = await Quiz.findById(quizId)
-      appAssert(liveQuiz, 404, 'Quiz not found')
+      appAssert(liveQuiz, 404, 'No live Quiz found')
 
       liveQuiz.status = 'closed'
       await liveQuiz.save()
@@ -564,3 +566,4 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
   return res.status(200).json({ message: 'Quiz scheduled successfully', quiz })
 })
+
