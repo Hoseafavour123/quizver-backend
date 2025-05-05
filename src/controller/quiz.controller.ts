@@ -500,18 +500,18 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
 
 
-  // await Promise.all(
-  //   users.map((user) =>
-  //     sendMail({
-  //       email: user.email,
-  //       ...getNewQuizNotificationTemplate(
-  //         quiz?.title || 'New Quiz',
-  //         quizPaymentUrl,
-  //         hours
-  //       ),
-  //     })
-  //   )
-  // )
+  await Promise.all(
+    users.map((user) =>
+      sendMail({
+        email: user.email,
+        ...getNewQuizNotificationTemplate(
+          quiz?.title || 'New Quiz',
+          quizPaymentUrl,
+          hours
+        ),
+      })
+    )
+  )
 
   await QuizModel.findOneAndUpdate({ _id: quizId }, { notificationSent: true })
 
@@ -538,14 +538,14 @@ export const scheduleQuiz = catchErrors(async (req, res) => {
 
     const quizUrl = `https://www.quizver.com.ng/user/live-quiz?quizId=${quizId}`
 
-    // await Promise.all(
-    //   users.map((user) =>
-    //     sendMail({
-    //       email: user.email,
-    //       ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
-    //     })
-    //   )
-    // )
+    await Promise.all(
+      users.map((user) =>
+        sendMail({
+          email: user.email,
+          ...getQuizNowLiveTemplate(quiz?.title || 'Live Quiz', quizUrl),
+        })
+      )
+    )
 
     const io = getSocket()
 
