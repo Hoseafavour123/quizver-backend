@@ -61,17 +61,13 @@ export const createAccount = async (data: CreateAccountParams) => {
   //const url = `${process.env.APP_ORIGIN}/email/verify/${verificationCode._id}`
   const url = `https://www.quizver.com.ng/email/verify/${verificationCode._id}`
 
+  try {
   await sendMail({ email: user.email, ...getVerifyEmailTemplate(url) })
-    .then((res) => console.log('Verification email sent'))
-    .catch((err) => {
-      console.log("Error in send mail", err)
-      appAssert(
-        !err,
-        INTERNAL_SERVER_ERROR,
-        'Failed to send verification email'
-      )
-    }
-    )
+  console.log('Verification email sent')
+} catch (err) {
+  console.error('Send mail failed:', err)
+  throw new AppError('Failed to send verification email', 500)
+}
 
 
   const session = await SessionModel.create({
