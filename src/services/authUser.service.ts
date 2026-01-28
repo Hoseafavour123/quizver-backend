@@ -63,12 +63,14 @@ export const createAccount = async (data: CreateAccountParams) => {
 
   await sendMail({ email: user.email, ...getVerifyEmailTemplate(url) })
     .then((res) => console.log('Verification email sent'))
-    .catch((err) =>
+    .catch((err) => {
+      console.log("Error in send mail", err)
       appAssert(
         !err,
         INTERNAL_SERVER_ERROR,
         'Failed to send verification email'
       )
+    }
     )
 
 
