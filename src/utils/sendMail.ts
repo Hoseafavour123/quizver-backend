@@ -82,13 +82,15 @@ export const sendMail = async ({
   text,
 }: SendMailOptions): Promise<void> => {
   try {
-    await resend.emails.send({
-      from: process.env.MAIL_FROM!,
-      to: email,
-      subject,
-      html,
-      text,
-    })
+   const result = await resend.emails.send({
+  from: process.env.MAIL_FROM!,
+  to: email,
+  subject,
+  html,
+  text,
+})
+
+console.log('Resend result:', result)
   } catch (error) {
     console.error('Email provider error:', error)
     throw error
